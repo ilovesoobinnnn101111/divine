@@ -12,8 +12,8 @@ export default {
   const inFarmVoice=Boolean(session.voiceChannelId&&message.member?.voice?.channelId===session.voiceChannelId);
   if(!inFarmChannel&&!inFarmVoice) return;
   const content=message.content.toLowerCase().trim();
-  const join=/\\b(join|joining|spot|slots|room|invite)\\b/i.test(content);
-  const time=/\\b(time|long|remaining|left|finish|end)\\b/i.test(content);
+  const join=/\b(join|joining|spot|slots|room|invite)\b/i.test(content);
+  const time=/\b(time|long|remaining|left|finish|end)\b/i.test(content);
   if(!join&&!time) return;
   const key=`${message.channelId}:${message.author.id}`;
   if((cooldown.get(key)||0)>Date.now()) return;
