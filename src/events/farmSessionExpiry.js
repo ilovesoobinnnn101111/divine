@@ -1,5 +1,5 @@
 import { Events } from 'discord.js';
-import { getActiveFarm, saveActiveFarm } from '../services/farm/sessionService.js';
+import { getActiveFarm, completeFarm } from '../services/farm/sessionService.js';
 import { farmConfig } from '../services/farm/config.js';
 
 export default {
@@ -9,7 +9,7 @@ export default {
    if(!farmConfig.guildId||!client.db?.isAvailable?.()) return;
    const session=await getActiveFarm(client,farmConfig.guildId);
    if(!session||Date.now()-session.startedAt<3600000) return;
-   await saveActiveFarm(client,farmConfig.guildId,null);
+   await completeFarm(client,farmConfig.guildId,session,'EXPIRED');
    const channel=await client.channels.fetch(session.channelId).catch(()=>null);
    const message=await channel?.messages.fetch(session.messageId).catch(()=>null);
    if(message) await message.edit({content:'Farm session ended automatically after one hour.',embeds:[],components:[]}).catch(()=>{});
