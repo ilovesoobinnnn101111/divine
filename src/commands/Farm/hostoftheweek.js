@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder, MessageFlags } from 'discord.js';
-import { readRecords, isManager } from '../../services/farm/records.js';
+import { readRecords } from '../../services/farm/records.js';
+import { farmConfig, memberHasFarmRole } from '../../services/farm/config.js';
 
 const TZ = 'Africa/Cairo';
 const localParts = timestamp => Object.fromEntries(new Intl.DateTimeFormat('en-GB', {
@@ -48,7 +49,7 @@ export default {
     const eligible = [...totals.entries()].filter(([, minutes]) => minutes >= 300).sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0]));
     const winner = eligible[0];
     const award = interaction.options.getBoolean('award') ?? false;
-    if (award && !isManager(interaction.member)) return interaction.editReply('Only host managers can award Host of the Week.');
+    if (award && !memberHasFarmRole(interaction.member, farmConfig.roles.manager)) return interaction.editReply('Only host managers can award Host of the Week.');
     if (!winner) return interaction.editReply('No host reached the 5-hour quota in the last completed quota period.');
     const embed = new EmbedBuilder().setTitle('Host of the Week').setColor(0xFFD700)
       .setDescription(`Winner: <@${winner[0]}>\nLogged: **${(winner[1] / 60).toFixed(1)} hours**\nQuota period: <t:${Math.floor(start/1000)}:F> – <t:${Math.floor(end/1000)}:F>`);
