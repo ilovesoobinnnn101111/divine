@@ -1,6 +1,6 @@
 import { MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } from 'discord.js';
 import { farmConfig, memberHasFarmRole } from '../../services/farm/config.js';
-import { getActiveFarm, saveActiveFarm, refreshFarmMessage } from '../../services/farm/sessionService.js';
+import { getActiveFarm, saveActiveFarm, refreshFarmMessage, completeFarm } from '../../services/farm/sessionService.js';
 
 const handler = action => ({
   name: `farm_${action}`,
@@ -19,7 +19,7 @@ const handler = action => ({
       if (session.hostId !== interaction.user.id && !memberHasFarmRole(interaction.member, farmConfig.roles.manager) && !interaction.member.permissions?.has('ManageGuild')) {
         return interaction.reply({ content: 'Only the host or a manager can end this farm.', flags: MessageFlags.Ephemeral });
       }
-      await saveActiveFarm(client, interaction.guildId, null);
+      await completeFarm(client, interaction.guildId, session, 'ENDED');
       await interaction.update({ content: 'Farm session ended.', embeds: [], components: [] });
       return;
     }
