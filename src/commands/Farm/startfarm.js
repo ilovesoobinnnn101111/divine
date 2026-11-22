@@ -6,7 +6,7 @@ export default {
   data: new SlashCommandBuilder().setName('startfarm').setDescription('Start a farm session (hosts only)')
     .addStringOption(option => option.setName('type').setDescription('Farm type').setRequired(true)
       .addChoices({ name: 'Regular (1 hour)', value: 'REGULAR' }, { name: 'VIP (1 hour)', value: 'VIP' }))
-    .addIntegerOption(option => option.setName('altaccounts').setDescription('Number of alt accounts (0-12)').setRequired(true).setMinValue(0).setMaxValue(12)),
+    .addIntegerOption(option => option.setName('altaccounts').setDescription('Number of alt accounts (0-11)').setRequired(true).setMinValue(0).setMaxValue(11)),
   async execute(interaction, guildConfig, client) {
     if (!interaction.inGuild() || !canHost(interaction.member)) return interaction.reply({ content: 'Only farm hosts can start sessions.', flags: MessageFlags.Ephemeral });
     if (farmConfig.guildId && interaction.guildId !== farmConfig.guildId) return interaction.reply({ content: 'Farm commands are not enabled in this server.', flags: MessageFlags.Ephemeral });
