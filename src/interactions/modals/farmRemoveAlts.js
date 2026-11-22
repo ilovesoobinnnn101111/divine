@@ -1,7 +1,7 @@
 import { MessageFlags } from 'discord.js';
 import { getActiveFarm, saveActiveFarm, refreshFarmMessage } from '../../services/farm/sessionService.js';
 export default {
- name:'farm:removealtsmodal',
+ name:'farm_removealtsmodal',
  async execute(interaction,client){
   if(!interaction.inGuild()) return interaction.reply({content:'Server only.',flags:MessageFlags.Ephemeral});
   const session=await getActiveFarm(client,interaction.guildId);
