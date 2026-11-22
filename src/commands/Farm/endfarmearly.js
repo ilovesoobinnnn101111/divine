@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, MessageFlags } from 'discord.js';
-import { getActiveFarm, saveActiveFarm } from '../../services/farm/sessionService.js';
+import { getActiveFarm, completeFarm } from '../../services/farm/sessionService.js';
 import { isManager } from '../../services/farm/records.js';
 export default {
  data:new SlashCommandBuilder().setName('endfarmearly').setDescription('End a farm early (hosts only)')
@@ -9,7 +9,7 @@ export default {
   const session=await getActiveFarm(client,interaction.guildId);
   if(!session) return interaction.reply({content:'No active farm.',flags:MessageFlags.Ephemeral});
   if(session.hostId!==interaction.user.id&&!isManager(interaction.member)) return interaction.reply({content:'Only the host or a manager can end the farm.',flags:MessageFlags.Ephemeral});
-  await saveActiveFarm(client,interaction.guildId,null);
+  await completeFarm(client,interaction.guildId,session,'EARLY');
   const channel=await client.channels.fetch(session.channelId).catch(()=>null);
   const message=await channel?.messages.fetch(session.messageId).catch(()=>null);
   const reason=interaction.options.getString('reason');
