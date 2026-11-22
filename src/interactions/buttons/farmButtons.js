@@ -24,6 +24,9 @@ const handler = action => ({
       return;
     }
     if (farmConfig.roles.blacklist && interaction.member.roles?.cache?.has(farmConfig.roles.blacklist)) return interaction.reply({ content: 'You cannot join this farm.', flags: MessageFlags.Ephemeral });
+    if (action === 'join' && !session.players.includes(interaction.user.id) && 1 + session.altAccounts + session.players.length >= 12) {
+      return interaction.reply({ content: 'This farm is full (12/12 spots).', flags: MessageFlags.Ephemeral });
+    }
     const players = new Set(session.players);
     if (action === 'join') players.add(interaction.user.id);
     else players.delete(interaction.user.id);
