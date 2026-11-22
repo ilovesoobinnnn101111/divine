@@ -3,6 +3,7 @@ import { Client, Collection, GatewayIntentBits } from 'discord.js';
 import { REST } from '@discordjs/rest';
 import express from 'express';
 import cron from 'node-cron';
+import { runWeeklyHostAward } from './services/farm/weeklyAward.js';
 
 import config from './config/application.js';
 import { initializeDatabase } from './utils/database.js';
@@ -251,6 +252,7 @@ class TitanBot extends Client {
     cron.schedule('0 6 * * *', runSafeTask('birthday_check', () => checkBirthdays(this)));
     cron.schedule('* * * * *', runSafeTask('giveaway_check', () => checkGiveaways(this)));
     cron.schedule('*/15 * * * *', runSafeTask('counter_update', () => this.updateAllCounters()));
+    cron.schedule('*/5 * * * *', runSafeTask('weekly_host_award', () => runWeeklyHostAward(this)));
   }
 
   async updateAllCounters() {
