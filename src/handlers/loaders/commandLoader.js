@@ -237,6 +237,16 @@ function prepareCommandsForRegistration(commands) {
 }
 
 async function registerGlobalCommands(client, clientId, commands, totalSubcommands) {
+    const testGuildId = process.env.TEST_GUILD_ID?.trim();
+    if (testGuildId) {
+        if (!/^\d{17,20}$/.test(testGuildId)) throw new Error('TEST_GUILD_ID must be a valid Discord server ID');
+        if (!clientId) throw new Error('CLIENT_ID is required for slash command registration');
+        validateCommands(commands);
+        logger.info(`Registering ${commands.length} commands in test guild ${testGuildId} (global 100-command limit does not apply)`);
+        await client.rest.put(`/applications/${clientId}/guilds/${testGuildId}/commands`, { body: commands });
+        logger.info(`Successfully registered ${commands.length} test guild commands`);
+        return;
+    }
     if (!clientId) {
         throw new Error('CLIENT_ID is required for slash command registration');
     }
