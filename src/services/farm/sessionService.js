@@ -21,10 +21,10 @@ export async function saveActiveFarm(client, guildId, session) {
 
 export function farmButtons(session) {
   return [new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId('farm:join').setLabel('Join').setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setCustomId('farm:leave').setLabel('Leave').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId('farm:removealts').setLabel('Remove alts').setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId('farm:end').setLabel('End farm').setStyle(ButtonStyle.Danger),
+    new ButtonBuilder().setCustomId('farm_join').setLabel('Join').setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId('farm_leave').setLabel('Leave').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('farm_removealts').setLabel('Remove alts').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId('farm_end').setLabel('End farm').setStyle(ButtonStyle.Danger),
   )];
 }
 
