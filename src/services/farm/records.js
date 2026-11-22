@@ -8,16 +8,33 @@ export async function readRecords(client, guildId, kind) {
   const value = await client.db.get(key(guildId, kind), []);
   return Array.isArray(value) ? value : [];
 }
+const recordLocks = new Map();
+export async function withRecordLock(client, guildId, kind, task) {
+  const lockKey = `${guildId}:${kind}`;
+  const previous = recordLocks.get(lockKey) || Promise.resolve();
+  let release;
+  const next = new Promise(resolve => { release = resolve; });
+  const tail = previous.then(() => next);
+  recordLocks.set(lockKey, tail);
+  await previous;
+  try { return await task(); }
+  finally {
+    release();
+    if (recordLocks.get(lockKey) === tail) recordLocks.delete(lockKey);
+  }
+}
 export async function appendRecord(client, guildId, kind, record) {
   requireDatabase(client);
-  const records = await readRecords(client, guildId, kind);
-  records.push(record);
-  await client.db.set(key(guildId, kind), records);
-  return records;
+  return withRecordLock(client, guildId, kind, async () => {
+    const records = await readRecords(client, guildId, kind);
+    records.push(record);
+    await client.db.set(key(guildId, kind), records);
+    return records;
+  });
 }
 export async function replaceRecords(client, guildId, kind, records) {
   requireDatabase(client);
-  await client.db.set(key(guildId, kind), records);
+  await withRecordLock(client, guildId, kind, () => client.db.set(key(guildId, kind), records));
 }
 export function isManager(member) {
   return Boolean(member?.permissions?.has('ManageGuild') || farmConfig.roles.manager.some(id => member?.roles?.cache?.has(id)));
