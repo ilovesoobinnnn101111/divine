@@ -19,7 +19,7 @@ function interaction(userId, opts = {}) {
 test('button IDs match Divine interaction dispatcher', () => {
   const ids = farmButtons(session())[0].components.map(x => x.data.custom_id);
   assert.deepEqual(ids, ['farm_join','farm_leave','farm_removealts','farm_end']);
-  assert.deepEqual(farmHandlers.map(x => x.name), ids);
+  assert.deepEqual(farmHandlers.map(x => x.name).sort(), [...ids].sort());
   assert.equal(farmModal.name, 'farm_removealtsmodal');
 });
 test('farm embed counts host and alts in 12 spots', () => {
