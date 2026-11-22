@@ -1,5 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'discord.js';
 import { farmConfig, memberHasFarmRole } from './config.js';
+import { appendRecord } from './records.js';
 
 const key = guildId => `${farmConfig.databasePrefix}${guildId}:active`;
 
@@ -44,4 +45,17 @@ export async function refreshFarmMessage(client, session) {
   const channel = await client.channels.fetch(session.channelId).catch(() => null);
   const message = await channel?.messages.fetch(session.messageId).catch(() => null);
   if (message) await message.edit({ embeds: [farmEmbed(session)], components: farmButtons(session) });
+}
+
+/** Save a completed session before removing the active session. */
+export async function completeFarm(client, guildId, session, reason = 'COMPLETED') {
+  await appendRecord(client, guildId, 'completedSessions', {
+    id: session.messageId,
+    hostId: session.hostId,
+    playerIds: [...new Set(session.players || [])].filter(id => id !== session.hostId),
+    startedAt: session.startedAt,
+    endedAt: Date.now(),
+    reason,
+  });
+  await saveActiveFarm(client, guildId, null);
 }
