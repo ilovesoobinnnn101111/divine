@@ -241,10 +241,12 @@ async function registerGlobalCommands(client, clientId, commands, totalSubcomman
     if (testGuildId) {
         if (!/^\d{17,20}$/.test(testGuildId)) throw new Error('TEST_GUILD_ID must be a valid Discord server ID');
         if (!clientId) throw new Error('CLIENT_ID is required for slash command registration');
-        validateCommands(commands);
-        logger.info(`Registering ${commands.length} commands in test guild ${testGuildId} (global 100-command limit does not apply)`);
-        await client.rest.put(`/applications/${clientId}/guilds/${testGuildId}/commands`, { body: commands });
-        logger.info(`Successfully registered ${commands.length} test guild commands`);
+        const farmCommands = commands.filter(command => command.name === 'startfarm' || command.name === 'farmhelp' || command.name === 'cancelfarm' || command.name === 'endfarmearly' || command.name === 'hostcheck' || command.name === 'hostleaderboard' || command.name === 'hostlog' || command.name === 'mylogs' || command.name === 'reportplayer' || command.name === 'resetlogs' || command.name === 'searchlogs' || command.name === 'vouchhost' || command.name === 'vouchstats');
+        if (!farmCommands.some(command => command.name === 'startfarm')) throw new Error('Farm command startfarm was not loaded');
+        validateCommands(farmCommands);
+        logger.info(`Registering ${farmCommands.length} farm commands in test guild ${testGuildId}`);
+        await client.rest.put(`/applications/${clientId}/guilds/${testGuildId}/commands`, { body: farmCommands });
+        logger.info(`Successfully registered ${farmCommands.length} farm test guild commands`);
         return;
     }
     if (!clientId) {
