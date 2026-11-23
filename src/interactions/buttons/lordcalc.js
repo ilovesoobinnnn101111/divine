@@ -119,7 +119,7 @@ export default {
             const response = await submitBoostRequest(i, i.client, {type:'Lord Boost',summary,total,details:{items}});
             if (response.error) return i.editReply({content:response.error,embeds:[],components:[]});
             collector.stop('finished');
-            return i.editReply({content:`✅ Request \`${response.request.request_id}\` submitted for manager review. Estimate: ${total.toFixed(2)}. ${response.warning||''}`,embeds:[],components:[]});
+            return i.editReply({content:`✅ Request \`${response.request.request_id}\` submitted in <#${response.ticketChannelId}> for manager review. Estimate: ${total.toFixed(2)}. ${response.warning||''}`,embeds:[],components:[]});
           } catch { return i.editReply({content:'Could not submit the request. Please try again.',embeds:[],components:[]}); }
         } else if (action === 'lordcalc_total') {
           const pending = state.hero !== null && state.end > state.start
