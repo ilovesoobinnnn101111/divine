@@ -13,12 +13,14 @@ export default {
     await interaction.deferReply();
     if (!client.db?.isAvailable?.()) return interaction.editReply('PostgreSQL is unavailable. Please try again later.');
     const user = interaction.options.getUser('trainer') || interaction.user;
-    const [allRatings, trainerLogs] = await Promise.all([
+    const [allRatings, trainerLogs, resets] = await Promise.all([
       readRecords(client, interaction.guildId, 'trainerRatings'),
-      readRecords(client, interaction.guildId, 'trainerLogs')
+      readRecords(client, interaction.guildId, 'trainerLogs'),
+      readRecords(client, interaction.guildId, 'trainerRatingResets')
     ]);
     const ratings = allRatings.filter(r => r?.trainerId === user.id && Number.isInteger(Number(r.rating)) && Number(r.rating) >= 1 && Number(r.rating) <= 5);
-    const weekly = ratings.filter(r => Number(r.timestamp) > Date.now() - WEEK);
+    const lastReset = Math.max(0, ...resets.map(r => Number(r.timestamp) || 0));
+    const weekly = ratings.filter(r => Number(r.timestamp) > Math.max(Date.now() - WEEK, lastReset));
     const sessions = trainerLogs.filter(r => r?.trainerId === user.id);
     const embed = new EmbedBuilder().setColor(0x9B59B6)
       .setTitle(`🎓 Trainer Stats - ${user.username}`)
@@ -31,9 +33,9 @@ export default {
       const avg = ratings.reduce((s,r) => s + Number(r.rating), 0) / ratings.length;
       const weekAvg = weekly.length ? weekly.reduce((s,r) => s + Number(r.rating), 0) / weekly.length : 0;
       const dist = [1,2,3,4,5].map(n => ratings.filter(r => Number(r.rating) === n).length);
-      embed.setDescription(`**All-Time:** ${avg.toFixed(2)}/5.0 ${'⭐'.repeat(Math.round(avg))}${'☆'.repeat(5-Math.round(avg))}\n**Past 7 days:** ${weekly.length} ratings (${weekAvg.toFixed(2)}/5.0)`);
+      embed.setDescription(`**All-Time:** ${avg.toFixed(2)}/5.0 ${'⭐'.repeat(Math.round(avg))}${'☆'.repeat(5-Math.round(avg))}\n**Current week:** ${weekly.length} ratings (${weekAvg.toFixed(2)}/5.0)`);
       embed.addFields(
-        { name: '📊 Total Ratings', value: `${ratings.length} all-time\n${weekly.length} past 7 days`, inline: true },
+        { name: '📊 Total Ratings', value: `${ratings.length} all-time\n${weekly.length} current week`, inline: true },
         { name: '⭐ Breakdown', value: [5,4,3,2,1].map(n => `${n}⭐: ${dist[n-1]}`).join('\n'), inline: true }
       );
     }
