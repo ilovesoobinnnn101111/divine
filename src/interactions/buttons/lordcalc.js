@@ -101,6 +101,15 @@ export default {
           state.items.push({ hero: heroes[state.hero], start: state.start, end: state.end, cost: tiers[state.end][1] - tiers[state.start][1] });
           state.hero = null;
         } else if (action === 'lordcalc_request') {
+          return i.update({components:[new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId(`lordcalc_openticket:${nonce}`).setStyle(ButtonStyle.Success).setLabel('Open Boost Ticket'),
+            new ButtonBuilder().setCustomId(`lordcalc_back:${nonce}`).setStyle(ButtonStyle.Secondary).setLabel('Back')
+          )]});
+        } else if (action === 'lordcalc_back') {
+          return i.update({components:[new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId(`lordcalc_request:${nonce}`).setStyle(ButtonStyle.Success).setLabel('Request This Boost')
+          )]});
+        } else if (action === 'lordcalc_openticket') {
           if (!state.finalItems?.length) return i.reply({ content: 'Calculate your total first.', flags: MessageFlags.Ephemeral });
           await i.deferUpdate();
           const items = state.finalItems.map(x=>({hero:x.hero,start:tiers[x.start][0],end:tiers[x.end][0],cost:x.cost}));
