@@ -1,4 +1,5 @@
 import { ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageFlags } from 'discord.js';
+import { submitBoostRequest } from '../../services/farm/boostRequests.js';
 
 const heroes = [
   'Adam Warlock','Angela','Black Cat','Black Panther','Black Widow','Blade','Captain America','Cloak & Dagger',
@@ -99,6 +100,18 @@ export default {
             return i.reply({ content: 'Maximum 15 characters per estimate. Calculate your total or reset.', flags: MessageFlags.Ephemeral });
           state.items.push({ hero: heroes[state.hero], start: state.start, end: state.end, cost: tiers[state.end][1] - tiers[state.start][1] });
           state.hero = null;
+        } else if (action === 'lordcalc_request') {
+          if (!state.finalItems?.length) return i.reply({ content: 'Calculate your total first.', flags: MessageFlags.Ephemeral });
+          await i.deferUpdate();
+          const items = state.finalItems.map(x=>({hero:x.hero,start:tiers[x.start][0],end:tiers[x.end][0],cost:x.cost}));
+          const total = items.reduce((sum,x)=>sum+x.cost,0);
+          const summary = items.map(x=>`${x.hero}: ${x.start} → ${x.end} (${x.cost})`).join('; ');
+          try {
+            const response = await submitBoostRequest(i, i.client, {type:'Lord Boost',summary,total,details:{items}});
+            if (response.error) return i.editReply({content:response.error,embeds:[],components:[]});
+            collector.stop('finished');
+            return i.editReply({content:`✅ Request \`${response.request.request_id}\` submitted for manager review. Estimate: ${total.toFixed(2)}. ${response.warning||''}`,embeds:[],components:[]});
+          } catch { return i.editReply({content:'Could not submit the request. Please try again.',embeds:[],components:[]}); }
         } else if (action === 'lordcalc_total') {
           const pending = state.hero !== null && state.end > state.start
             ? [{ hero: heroes[state.hero], start: state.start, end: state.end, cost: tiers[state.end][1] - tiers[state.start][1] }] : [];
@@ -108,8 +121,11 @@ export default {
           const summary = all.map((x, j) => `**${j+1}. ${x.hero}** · ${tiers[x.start][0]} → ${tiers[x.end][0]} · **${money(x.cost)}**`).join('\n');
           const embed = new EmbedBuilder().setColor(0x2ECC71).setTitle('🌟 Lord Boost Price Estimate')
             .setDescription(`${summary}\n\n**TOTAL: ${money(total)}**\n\n*Estimate only; no payment or order has been created.*`.slice(0, 4096));
-          await i.update({ embeds: [embed], components: [], allowedMentions: { parse: [] } });
-          collector.stop('finished');
+          state.finalItems = all;
+          await i.update({ embeds: [embed], components: [new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId(`lordcalc_request:${nonce}`).setStyle(ButtonStyle.Success).setLabel('Request This Boost')
+          )], allowedMentions: { parse: [] } });
+          return;
           return;
         }
         await i.update(view(state, nonce));
