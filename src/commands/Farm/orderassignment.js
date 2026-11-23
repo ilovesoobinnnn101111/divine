@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder, MessageFlags } from 'discord.js';
+import { workloadSnapshot } from '../../services/farm/boosterWorkload.js';
 import { availabilityRows, availabilityOf, availabilityIcon } from '../../services/farm/boosterAvailability.js';
 import { notifyBooster, notificationText } from '../../services/farm/boosterNotifications.js';
 import { appendRecord } from '../../services/farm/records.js';
@@ -31,6 +32,8 @@ export default {
     const notes = interaction.options.getString('notes') || '';
     await interaction.deferReply();
     const availability=availabilityOf(await availabilityRows(client,interaction.guildId),booster.id);
+    const workload=await workloadSnapshot(client,interaction.guildId);
+    const selected=workload.people.find(x=>x.id===booster.id);
     const now = Date.now();
     const orderId = `ORD-${interaction.id}`;
     const record = {
@@ -53,6 +56,8 @@ export default {
       ).setFooter({ text: `Assigned by ${interaction.user.username}` }).setTimestamp();
     if (customer) embed.addFields({ name: '👥 Customer', value: customer, inline: false });
     if (notes) embed.addFields({ name: '📝 Notes', value: notes, inline: false });
+    if(selected?.limit!==null&&selected?.limit!==undefined&&selected.count>=selected.limit)embed.addFields({name:'⚠️ Workload Limit',value:`Booster already has ${selected.count}/${selected.limit} active orders. Manager override applied.`});
+    if(workload.recommended&&workload.recommended.id!==booster.id)embed.addFields({name:'💡 Recommended Booster',value:`<@${workload.recommended.id}> · ${workload.recommended.count} active orders`});
     if(availability==='Busy'||availability==='Offline')embed.addFields({name:'⚠️ Availability Warning',value:`${availabilityIcon(availability)} Booster is ${availability}. Assignment was still saved.`});
     await interaction.editReply({ embeds: [embed], allowedMentions: { parse: [] } });
     await notifyBooster(client,interaction.guildId,{orderId,recipientId:booster.id,type:'assignment',message:notificationText('📋 New Divine order assigned',record,`Category: ${category}`)});
