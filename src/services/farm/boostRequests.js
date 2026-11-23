@@ -2,7 +2,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageFlag
 import { appendRecord, readRecords, withRecordLock } from './records.js';
 import { farmConfig, memberHasFarmRole } from './config.js';
 import { createTicket } from '../ticket.js';
-import { PermissionFlagsBits } from 'discord.js';
+import { ChannelType } from 'discord.js';
 
 const key = (guild, kind) => `${farmConfig.databasePrefix}${guild}:${kind}`;
 const safe = (v, max=1600) => String(v ?? '').replace(/[\x00-\x1F\x7F]/g,' ').replace(/<@/g,'<\\@').slice(0,max);
@@ -27,7 +27,9 @@ export async function submitBoostRequest(interaction, client, payload) {
   };
   let ticket;
   try {
-    ticket = await createTicket(interaction.guild, interaction.member, null, `Boost request ${req.request_id} — ${payload.type}`);
+    const category = await interaction.guild.channels.fetch('1571956074008027142').catch(() => null);
+    if (!category || category.type !== ChannelType.GuildCategory) return {error:'Configured boost ticket category is unavailable.'};
+    ticket = await createTicket(interaction.guild, interaction.member, category.id, `Boost request ${req.request_id} — ${payload.type}`);
     await ticket.channel.permissionOverwrites.edit(managerRoleId, {
       ViewChannel:true,SendMessages:true,ReadMessageHistory:true,AttachFiles:true
     });
