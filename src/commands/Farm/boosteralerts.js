@@ -53,11 +53,14 @@ export default {
       if (order.status === 'In Progress' && idle !== null && idle >= progressDays) flags.push(`No update ${idle.toFixed(1)}d`);
       const open = perBooster.get(order.booster_id) || 0;
       if (open >= multipleCount) flags.push(`${open} unfinished assignments`);
+      const savedPriority = ['Low', 'Normal', 'High', 'Urgent'].includes(order.priority) ? order.priority : 'Normal';
+      if (savedPriority === 'Urgent' || savedPriority === 'High') flags.unshift(`${savedPriority} order priority`);
       if (!flags.length) continue;
       const priority = created !== null && created >= overdueDays * 2 ? 3
         : created !== null && created >= overdueDays ? 2
         : idle !== null && idle >= (order.status === 'Pending' ? pendingDays : progressDays) * 2 ? 2 : 1;
-      alerts.push({ order, priority, idle, created, flags });
+      const effectivePriority = Math.max(priority, savedPriority === 'Urgent' ? 3 : savedPriority === 'High' ? 2 : 0);
+      alerts.push({ order, priority: effectivePriority, savedPriority, idle, created, flags });
     }
     alerts.sort((a, b) => b.priority - a.priority || (b.idle ?? -1) - (a.idle ?? -1));
     const high = alerts.filter(a => a.priority === 3).length;
@@ -65,12 +68,12 @@ export default {
     const low = alerts.filter(a => a.priority === 1).length;
     const lines = alerts.slice(0, 10).map(item => {
       const level = item.priority === 3 ? '🔴 URGENT' : item.priority === 2 ? '🟠 HIGH' : '🟡 REVIEW';
-      return `${level} · \`${safe(item.order.order_id, 40)}\` · ${mention(item.order.booster_id)}\n**${safe(item.order.status, 20)}** · Last activity: ${item.idle === null ? 'Unknown' : `${item.idle.toFixed(1)}d ago`}\n${item.flags.map(f => safe(f, 55)).join(' · ')}`;
+      return `${level} · \`${safe(item.order.order_id, 40)}\` · ${mention(item.order.booster_id)}\n**${safe(item.order.status, 20)}** · Order priority: **${item.savedPriority}** · Last activity: ${item.idle === null ? 'Unknown' : `${item.idle.toFixed(1)}d ago`}\n${item.flags.map(f => safe(f, 55)).join(' · ')}`;
     });
     const embed = new EmbedBuilder().setColor(alerts.length ? 0xE67E22 : 0x2ECC71).setTitle('🚨 Booster Order Alerts')
       .setDescription(`**Unfinished orders:** ${unfinished.length} · **Flagged:** ${alerts.length}\n🔴 Urgent: ${high} · 🟠 High: ${medium} · 🟡 Review: ${low}\n\n${lines.join('\n\n') || '✅ No orders currently meet the alert thresholds.'}`.slice(0, 4096))
       .addFields({ name: 'Alert thresholds', value: `Pending without update: **${pendingDays}d** · In Progress without update: **${progressDays}d**\nAging order: **${overdueDays}d** · Multiple unfinished assignments: **${multipleCount}**` })
-      .setFooter({ text: 'Shows up to 10 alerts · Aging is not a customer deadline · Thresholds configurable via Railway environment variables' }).setTimestamp();
+      .setFooter({ text: 'Shows up to 10 alerts · High/Urgent order priorities flag immediately · Aging is not a customer deadline · Thresholds configurable via Railway environment variables' }).setTimestamp();
     return interaction.editReply({ embeds: [embed], allowedMentions: { parse: [] } });
   }
 };
