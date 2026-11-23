@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder, MessageFlags } from 'discord.js';
+import { availabilityRows, availabilityOf, availabilityIcon } from '../../services/farm/boosterAvailability.js';
 import { notifyBooster, notificationText } from '../../services/farm/boosterNotifications.js';
 import { appendRecord } from '../../services/farm/records.js';
 import { memberHasFarmRole } from '../../services/farm/config.js';
@@ -29,6 +30,7 @@ export default {
     const customer = interaction.options.getString('customer') || null;
     const notes = interaction.options.getString('notes') || '';
     await interaction.deferReply();
+    const availability=availabilityOf(await availabilityRows(client,interaction.guildId),booster.id);
     const now = Date.now();
     const orderId = `ORD-${interaction.id}`;
     const record = {
@@ -51,6 +53,7 @@ export default {
       ).setFooter({ text: `Assigned by ${interaction.user.username}` }).setTimestamp();
     if (customer) embed.addFields({ name: '👥 Customer', value: customer, inline: false });
     if (notes) embed.addFields({ name: '📝 Notes', value: notes, inline: false });
+    if(availability==='Busy'||availability==='Offline')embed.addFields({name:'⚠️ Availability Warning',value:`${availabilityIcon(availability)} Booster is ${availability}. Assignment was still saved.`});
     await interaction.editReply({ embeds: [embed], allowedMentions: { parse: [] } });
     await notifyBooster(client,interaction.guildId,{orderId,recipientId:booster.id,type:'assignment',message:notificationText('📋 New Divine order assigned',record,`Category: ${category}`)});
   }
