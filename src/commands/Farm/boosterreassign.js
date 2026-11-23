@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageFlags, ComponentType } from 'discord.js';
+import { notifyBooster, notificationText } from '../../services/farm/boosterNotifications.js';
 import { readRecords, withRecordLock } from '../../services/farm/records.js';
 import { farmConfig, memberHasFarmRole } from '../../services/farm/config.js';
 
@@ -74,10 +75,9 @@ export default {
     }
     if (outcome !== 'saved')
       return interaction.editReply({ content: outcome === 'changed' ? 'The order was reassigned by someone else. No changes made.' : 'The order no longer exists. No changes made.', embeds: [], components: [] });
-    let dm = 'Sent';
-    try {
-      await booster.send(`🔁 A Divine order has been reassigned to you.\n**Order:** ${safe(id, 40)}\n**Hero:** ${safe(updated.hero)}\n**Level:** ${safe(updated.level, 50)}\n**Status:** ${safe(updated.status, 30)}`);
-    } catch { dm = 'Could not deliver (DMs may be disabled)'; }
+    const newDelivery=await notifyBooster(client,interaction.guildId,{orderId:id,recipientId:booster.id,type:'reassigned_to',message:notificationText('🔁 Divine order reassigned to you',updated)});
+    const oldDelivery=await notifyBooster(client,interaction.guildId,{orderId:id,recipientId:order.booster_id,type:'reassigned_from',message:notificationText('↩️ Divine order transferred away from you',updated,`New booster: ${booster.username}`)});
+    const dm=newDelivery.status==='Delivered'?'Sent':'Could not deliver (DMs may be disabled)';
     const result = new EmbedBuilder().setColor(0x2ECC71).setTitle('✅ Booster Order Reassigned')
       .setDescription(`**Order:** \`${safe(id, 40)}\`\n**Previous booster:** ${mention(order.booster_id)}\n**New booster:** ${mention(booster.id)}\n**Status preserved:** ${safe(updated.status, 30)}\n**Reassigned by:** ${mention(interaction.user.id)}\n**New booster DM:** ${dm}`)
       .setFooter({ text: 'Reassignment logged in reassignment_history' }).setTimestamp();
