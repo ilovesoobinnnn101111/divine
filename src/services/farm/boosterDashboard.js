@@ -1,5 +1,6 @@
 import { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { readRecords } from './records.js';
+import { availabilityRows, availabilityOf, availabilityIcon } from './boosterAvailability.js';
 import { safeRequest } from './boostRequests.js';
 
 const validId = id => /^ORD-\d{17,20}$/.test(String(id||''));
@@ -10,6 +11,7 @@ const deadline = order => {
 };
 export async function renderBoosterDashboard(client,guildId,view='active',selectedId=null){
  const orders=await readRecords(client,guildId,'boosterOrders');
+ const availabilities=await availabilityRows(client,guildId);
  const active=orders.filter(o=>o.status==='Pending'||o.status==='In Progress');
  const now=Date.now();
  const unassigned=active.filter(o=>!/^\d{17,20}$/.test(String(o.booster_id||'')));
@@ -34,6 +36,7 @@ export async function renderBoosterDashboard(client,guildId,view='active',select
    `**ID:** \`${safeRequest(selected.order_id,45)}\``,
    `**Status:** ${safeRequest(selected.status,35)}`,
    `**Booster:** ${mention(selected.booster_id)}`,
+   `**Availability:** ${availabilityIcon(availabilityOf(availabilities,selected.booster_id))} ${availabilityOf(availabilities,selected.booster_id)}`,
    `**Customer:** ${/^\d{17,20}$/.test(String(selected.customer_id||''))?mention(selected.customer_id):safeRequest(selected.customer||'Not specified',80)}`,
    `**Boost:** ${safeRequest(selected.hero||'Not specified',120)}`,
    `**Level:** ${safeRequest(selected.level||'Not specified',120)}`,
