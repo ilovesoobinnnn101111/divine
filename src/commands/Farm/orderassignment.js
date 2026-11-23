@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder, MessageFlags } from 'discord.js';
+import { notifyBooster, notificationText } from '../../services/farm/boosterNotifications.js';
 import { appendRecord } from '../../services/farm/records.js';
 import { memberHasFarmRole } from '../../services/farm/config.js';
 
@@ -51,10 +52,6 @@ export default {
     if (customer) embed.addFields({ name: '👥 Customer', value: customer, inline: false });
     if (notes) embed.addFields({ name: '📝 Notes', value: notes, inline: false });
     await interaction.editReply({ embeds: [embed], allowedMentions: { parse: [] } });
-    try {
-      await booster.send(`📋 You've been assigned a new Divine order.\n**Order:** ${orderId}\n**Category:** ${category}\n**Hero:** ${hero}\n**Level:** ${level}\n**Status:** Pending`);
-    } catch {
-      // Booster may have DMs disabled; assignment is already persisted.
-    }
+    await notifyBooster(client,interaction.guildId,{orderId,recipientId:booster.id,type:'assignment',message:notificationText('📋 New Divine order assigned',record,`Category: ${category}`)});
   }
 };
