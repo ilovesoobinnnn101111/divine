@@ -50,6 +50,10 @@ export default {
       const to = validTime(item.to) ? stamp(item.to) : 'None';
       push(item.timestamp, `📅 **Deadline changed:** ${from} → ${to} · By ${mention(item.by)}${item.reason ? ` · Reason: ${clean(item.reason, 130)}` : ''}`);
     }
+    for (const item of (Array.isArray(order.reminder_history) ? order.reminder_history : [])) {
+      if (!item || typeof item !== 'object') continue;
+      push(item.timestamp, `📩 **Reminder ${item.delivered ? 'delivered' : 'failed'}** · To ${mention(item.to_booster_id)} · By ${mention(item.by)}${item.message ? ` · Message: ${clean(item.message, 130)}` : ''}`);
+    }
     for (const item of transfers)
       push(item.timestamp, `🔁 **Reassigned** · ${mention(item.from_booster_id)} → ${mention(item.to_booster_id)} · By ${mention(item.by)}`);
     if (validTime(order.archived_at))
