@@ -12,7 +12,7 @@ const heroes = [
 const tiers = [
   ['Agent',0],['Knight',5],['Captain',15],['Centurion',30],['Lord',50],['Count',80],
   ['Colonel',110],['Warrior',140],['Elite',170],['Guardian',200],['Champion (Level 50)',230],
-  ...Array.from({ length: 10 }, (_, i) => [`Level ${55 + i * 5}`, 290 + i * 60])
+  ...Array.from({ length: 4 }, (_, i) => [`Level ${55 + i * 5}`, 290 + i * 60])
 ];
 const money = value => `$${value.toFixed(2)}`;
 const options = arr => arr.map((name, i) => ({ label: name.slice(0, 100), value: String(i) }));
