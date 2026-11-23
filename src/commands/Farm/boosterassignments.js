@@ -26,7 +26,9 @@ export default {
     for (const order of unfinished) {
       const id = order.booster_id;
       if (!id) continue;
-      const stats = workloads.get(id) || { pending: 0, inProgress: 0, oldest: null };
+      const stats = workloads.get(id) || { pending: 0, inProgress: 0, urgent: 0, high: 0, oldest: null };
+      if (order.priority === 'Urgent') stats.urgent++;
+      if (order.priority === 'High') stats.high++;
       if (order.status === 'Pending') stats.pending++;
       else stats.inProgress++;
       const created = Number(order.created_at);
@@ -43,11 +45,12 @@ export default {
       const total = stats.pending + stats.inProgress;
       const label = total >= limit ? '🔴 High workload' : '🟢 Normal';
       const oldest = stats.oldest === null ? 'Unknown' : `<t:${Math.floor(stats.oldest / 1000)}:R>`;
-      return `**${index + 1}.** ${mention(id)} — **${total} unfinished** · ${label}\n🟡 Pending: ${stats.pending} · 🔵 In Progress: ${stats.inProgress} · Oldest: ${oldest}`;
+      return `**${index + 1}.** ${mention(id)} — **${total} unfinished** · ${label}\n🟡 Pending: ${stats.pending} · 🔵 In Progress: ${stats.inProgress} · 🔴 Urgent: ${stats.urgent} · 🟠 High: ${stats.high} · Oldest: ${oldest}`;
     });
+    const urgentTotal = unfinished.filter(order => order.priority === 'Urgent').length;
     const unassigned = unfinished.filter(order => !order.booster_id).length;
     const embed = new EmbedBuilder().setColor(overloaded ? 0xE67E22 : 0x3498DB).setTitle('📋 Booster Assignment Workloads')
-      .setDescription(`**Unfinished orders:** ${unfinished.length}\n**Boosters with unfinished orders:** ${sorted.length}\n**High-workload boosters (${limit}+ orders):** ${overloaded}\n**Orders without a booster ID:** ${unassigned}\n\n${lines.join('\n\n') || '✅ No boosters currently have unfinished assignments.'}`.slice(0, 4096))
+      .setDescription(`**Unfinished orders:** ${unfinished.length}\n**Urgent unfinished orders:** ${urgentTotal}\n**Boosters with unfinished orders:** ${sorted.length}\n**High-workload boosters (${limit}+ orders):** ${overloaded}\n**Orders without a booster ID:** ${unassigned}\n\n${lines.join('\n\n') || '✅ No boosters currently have unfinished assignments.'}`.slice(0, 4096))
       .setFooter({ text: 'Top 10 busiest boosters · Current active records only · Workload threshold configurable via Railway' }).setTimestamp();
     return interaction.editReply({ embeds: [embed], allowedMentions: { parse: [] } });
   }
