@@ -11,7 +11,7 @@ const time = value => {
   const n = Number(value);
   return Number.isFinite(n) && n > 0 ? `<t:${Math.floor(n / 1000)}:R>` : 'Unknown';
 };
-const statuses = { Pending: '🟡', Accepted: '✅', Declined: '❌', 'In Progress': '🔵', Completed: '🏁', Cancelled: '🚫', Failed: '⚠️' };
+const statuses = { Pending: '🟡', Accepted: '✅', Declined: '❌', Withdrawn: '🚫', 'In Progress': '🔵', Completed: '🏁', Cancelled: '🚫', Failed: '⚠️' };
 
 export default {
   data: new SlashCommandBuilder().setName('myboostrequests')
@@ -47,13 +47,16 @@ export default {
           `**Request:** ${clean(status, 25)} · **Estimate:** ${price} · **Submitted:** ${time(req.created_at)}`,
           `**Selection:** ${clean(req.summary, 240)}`
         ];
-        if (status === 'Accepted') {
+        if (status === 'Accepted' || status === 'Cancelled') {
           if (linked) {
             lines.push(`**Order:** \`${clean(linked.order_id, 40)}\` · **Progress:** ${statuses[linked.status] || '📋'} ${clean(linked.status, 25)}`);
             if (validId(linked.booster_id)) lines.push(`**Assigned booster:** <@${linked.booster_id}>`);
           } else {
             lines.push('**Order:** Awaiting assignment finalization');
           }
+          if (req.cancellation_request) lines.push(`**Cancellation request:** ${clean(req.cancellation_request.status, 25)}`);
+        } else if (status === 'Withdrawn') {
+          lines.push('**Request withdrawn by customer**');
         } else if (status === 'Declined') {
           if (req.decline_reason) lines.push(`**Decline reason:** ${clean(req.decline_reason, 180)}`);
         }
