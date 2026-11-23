@@ -26,7 +26,9 @@ export default {
       const level = String(order.level || 'Unknown').slice(0, 60);
       const status = order.status || 'Unknown';
       const priority = ['Low', 'Normal', 'High', 'Urgent'].includes(order.priority) ? order.priority : 'Normal';
-      return `${statusEmoji[status] || '⚪'} \`${id}\` — **${hero}** (${level}) · ${status} · ${priorityEmoji[priority]} ${priority}`;
+      const deadline = Number(order.deadline_at);
+      const deadlineText = Number.isFinite(deadline) && deadline > 0 ? ` · 📅 <t:${Math.floor(deadline / 1000)}:R>${activeStatuses.has(status) && deadline <= Date.now() ? ' 🔴 OVERDUE' : ''}` : '';
+      return `${statusEmoji[status] || '⚪'} \`${id}\` — **${hero}** (${level}) · ${status} · ${priorityEmoji[priority]} ${priority}${deadlineText}`;
     };
     const embed = new EmbedBuilder().setColor(0x3498DB).setTitle('📋 My Booster Orders')
       .setDescription(`**Total:** ${orders.length}  |  **Active:** ${active.length}  |  **Completed:** ${completed.length}  |  **Other:** ${other.length}\n\nUse \`/orderstatus\` with an order ID for full details.`)
