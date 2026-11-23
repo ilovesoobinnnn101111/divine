@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder, MessageFlags } from 'discord.js';
+import { notifyBooster, notificationText } from '../../services/farm/boosterNotifications.js';
 import { readRecords, withRecordLock } from '../../services/farm/records.js';
 import { farmConfig, memberHasFarmRole } from '../../services/farm/config.js';
 
@@ -66,6 +67,7 @@ export default {
       .setDescription(`**Order:** \`${clean(updated.order_id, 40)}\`\n**Booster:** ${mention(updated.booster_id)}\n**Previous priority:** ${priorityIcons[previous] || '🔵'} ${clean(previous, 20)}\n**New priority:** ${priorityIcons[priority]} **${priority}**\n**Status (unchanged):** ${clean(updated.status, 40)}\n**Updated by:** ${mention(interaction.user.id)}\n**When:** <t:${Math.floor(updated.priority_updated_at / 1000)}:f>${reason ? `\n**Reason:** ${clean(reason)}` : ''}`)
       .addFields({ name: 'Priority changes recorded', value: String(history.length), inline: true })
       .setFooter({ text: 'Priority changes are saved in PostgreSQL · Status and notes preserved' }).setTimestamp();
+    if(priority==='High'||priority==='Urgent')await notifyBooster(client,interaction.guildId,{orderId:id,recipientId:updated.booster_id,type:'priority_'+priority.toLowerCase(),message:notificationText('🚨 Divine order priority changed',updated,`Priority: ${priority}`)});
     return interaction.editReply({ embeds: [embed], allowedMentions: { parse: [] } });
   }
 };
