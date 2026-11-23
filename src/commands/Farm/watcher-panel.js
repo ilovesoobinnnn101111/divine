@@ -6,7 +6,7 @@ export const sessions = new Map();
 export const authorized = member => ['HOST_MANAGER_ROLE_ID','HOST_TRAINER_ROLE_ID','WATCHER_ROLE_ID','OWNER_ROLE_ID'].some(k => memberHasFarmRole(member, ids(k)));
 export function panel(state) {
   const embed = new EmbedBuilder().setColor(0x9B59B6).setTitle('🎓 Watcher Trial Evaluation')
-    .setDescription(`**Trial Host:** <@${state.trialHostId}>\n**Farm Type:** ${state.farmType}\n**Rules Said:** ${state.rulesSaid ? 'Yes' : 'No'}\n**Disconnect:** ${state.dcOccurred ? 'Yes' : 'No'}\n**Griefing/Trolling:** ${state.griefTroll ? 'Yes' : 'No'}\n\nSet the farm type and checklist below. Your existing \`/watcher-report\` command remains available for final submission.`)
+    .setDescription(`**Trial Host:** <@${state.trialHostId}>\n**Farm Type:** ${state.farmType}\n**Rules Said:** ${state.rulesSaid ? 'Yes' : 'No'}\n**Disconnect:** ${state.dcOccurred ? 'Yes' : 'No'}\n**Griefing/Trolling:** ${state.griefTroll ? 'Yes' : 'No'}\n\nSet the farm type and checklist below. Use **Open Form & Submit** when the checklist is ready. Your existing \`/watcher-report\` command also remains available.`)
     .setImage(state.screenshotUrl).setTimestamp();
   const select = new StringSelectMenuBuilder().setCustomId(`watcher_panel_type:${state.userId}`).setPlaceholder('Choose farm type')
     .addOptions(['Hybrid','2-2-2','336','KO Farm'].map(value => ({ label: value, value, default: state.farmType === value })));
@@ -15,7 +15,8 @@ export function panel(state) {
     new ButtonBuilder().setCustomId(`watcher_panel_dc:${state.userId}`).setLabel(`DC: ${state.dcOccurred ? 'Yes' : 'No'}`).setStyle(state.dcOccurred ? ButtonStyle.Danger : ButtonStyle.Secondary),
     new ButtonBuilder().setCustomId(`watcher_panel_grief:${state.userId}`).setLabel(`Grief: ${state.griefTroll ? 'Yes' : 'No'}`).setStyle(state.griefTroll ? ButtonStyle.Danger : ButtonStyle.Secondary)
   );
-  return { embeds: [embed], components: [new ActionRowBuilder().addComponents(select), buttons], allowedMentions: { parse: [] } };
+  const submit = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId(`watcher_panel_submit:${state.userId}`).setLabel('Open Form & Submit').setStyle(ButtonStyle.Primary));
+  return { embeds: [embed], components: [new ActionRowBuilder().addComponents(select), buttons, submit], allowedMentions: { parse: [] } };
 }
 export default {
   data: new SlashCommandBuilder().setName('watcher-panel').setDescription('Open the interactive Watcher trial checklist')
