@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder, MessageFlags } from 'discord.js';
+import { notifyBooster, notificationText } from '../../services/farm/boosterNotifications.js';
 import { readRecords, withRecordLock } from '../../services/farm/records.js';
 import { farmConfig, memberHasFarmRole } from '../../services/farm/config.js';
 
@@ -78,6 +79,7 @@ export default {
     const embed = new EmbedBuilder().setColor(deadline ? 0x3498DB : 0x95A5A6).setTitle(deadline ? '📅 Order Deadline Saved' : '📅 Order Deadline Removed')
       .setDescription(`**Order:** \`${clean(id, 40)}\`\n**Booster:** ${mention(updated.booster_id)}\n**Previous deadline:** ${display(previous)}\n**New deadline:** ${display(deadline)}\n**Order status:** ${clean(updated.status, 40)}\n**Changed by:** ${mention(interaction.user.id)}${reason ? `\n**Reason:** ${clean(reason)}` : ''}`)
       .setFooter({ text: 'UTC deadline · Change saved to deadline_history · Order status and priority unchanged' }).setTimestamp();
+    await notifyBooster(client,interaction.guildId,{orderId:id,recipientId:updated.booster_id,type:'deadline_changed',message:notificationText('📅 Divine order deadline changed',updated,`New deadline: ${deadline?new Date(deadline).toISOString():'Removed'}`)});
     return interaction.editReply({ embeds: [embed], allowedMentions: { parse: [] } });
   }
 };
