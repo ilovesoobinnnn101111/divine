@@ -8,8 +8,8 @@ export default {
       return interaction.reply({ content: 'This command is only available in the test server.', flags: MessageFlags.Ephemeral });
     await interaction.deferReply();
     if (!client.db?.isAvailable?.()) return interaction.editReply('PostgreSQL is unavailable. Please try again later.');
-    const all = await readRecords(client, interaction.guildId, 'trainerRatings');
-    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const [all, resets] = await Promise.all([readRecords(client, interaction.guildId, 'trainerRatings'), readRecords(client, interaction.guildId, 'trainerRatingResets')]);
+    const cutoff = Math.max(Date.now() - 7 * 24 * 60 * 60 * 1000, ...resets.map(r => Number(r.timestamp) || 0));
     const byTrainer = new Map();
     for (const r of all) {
       const rating = Number(r?.rating);
@@ -19,8 +19,8 @@ export default {
     }
     const stats = [...byTrainer.values()].map(s => ({ ...s, avg: s.sum / s.count }));
     const embed = new EmbedBuilder().setColor(0xFFD700).setTitle('🎓 Weekly Trainer Leaderboard')
-      .setDescription(`**Period:** Past 7 days\n**Active Trainers:** ${stats.length}`).setTimestamp();
-    if (!stats.length) embed.setDescription('No ratings in the past 7 days yet.');
+      .setDescription(`**Period:** Current week\n**Active Trainers:** ${stats.length}`).setTimestamp();
+    if (!stats.length) embed.setDescription('No ratings this week yet.');
     const medal = i => ['🥇','🥈','🥉'][i] || `${i + 1}.`;
     const rated = stats.filter(s => s.count >= 2).sort((a,b) => b.avg-a.avg || b.count-a.count).slice(0,5);
     const most = [...stats].sort((a,b) => b.count-a.count || b.avg-a.avg).slice(0,5);
