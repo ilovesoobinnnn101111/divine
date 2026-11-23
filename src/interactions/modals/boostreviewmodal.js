@@ -1,4 +1,4 @@
-import { MessageFlags } from 'discord.js';
+import { MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { readRecords, withRecordLock, appendRecord } from '../../services/farm/records.js';
 import { farmConfig } from '../../services/farm/config.js';
 import { requestManager, requestEmbed, safeRequest, postBoostTicketUpdate } from '../../services/farm/boostRequests.js';
@@ -74,6 +74,19 @@ export default {
       color:action==='accept'?(orderSaved?0x2ECC71:0xE67E22):0xE74C3C
     });
   } catch { /* Ticket may have been deleted or bot lacks access. */ }
+  if(action==='accept'&&orderSaved&&req.ticket_channel_id){
+    try {
+      const ticket=await client.channels.fetch(req.ticket_channel_id).catch(()=>null);
+      if(ticket?.send)await ticket.send({
+        content:'📊 Track your order progress at any time:',
+        components:[new ActionRowBuilder().addComponents(
+          new ButtonBuilder().setCustomId('booststatus:check:'+id)
+            .setLabel('Check Order Status').setEmoji('📊').setStyle(ButtonStyle.Primary)
+        )],
+        allowedMentions:{parse:[]}
+      });
+    } catch { /* Ticket may be unavailable. */ }
+  }
   try {
     const customer=await client.users.fetch(req.customer_id);
     await customer.send({content:action==='accept'
