@@ -15,6 +15,25 @@ const tiers = [
   ['Colonel',110],['Warrior',140],['Elite',170],['Guardian',200],['Champion (Level 50)',230],
   ...Array.from({ length: 4 }, (_, i) => [`Level ${55 + i * 5}`, 290 + i * 60])
 ];
+const specialPrices = {
+  'Adam Warlock': [100, 300, 700],
+  'Mantis': [100, 300, 700],
+  'Mister Fantastic': [65, 185, 400],
+  'Ultron': [100, 300, 700],
+  'White Fox': [55, 145, 300]
+};
+// Special character rates are cumulative at levels 20, 50 and 70.
+// Intermediate five-level tiers are linearly interpolated between anchors.
+function cumulativePrice(hero, tierIndex) {
+  const anchors = specialPrices[hero];
+  if (!anchors) return tiers[tierIndex][1];
+  const level = tierIndex * 5;
+  if (level <= 20) return anchors[0] * level / 20;
+  if (level <= 50) return anchors[0] + (anchors[1] - anchors[0]) * (level - 20) / 30;
+  return anchors[1] + (anchors[2] - anchors[1]) * (level - 50) / 20;
+}
+const boostPrice = (hero, start, end) =>
+  Math.round((cumulativePrice(hero, end) - cumulativePrice(hero, start)) * 100) / 100;
 const money = value => `$${value.toFixed(2)}`;
 const options = arr => arr.map((name, i) => ({ label: name.slice(0, 100), value: String(i) }));
 const groups = [heroes.slice(0, 20), heroes.slice(20, 40), heroes.slice(40)];
@@ -24,7 +43,7 @@ const groupLabels = ['Heroes 1–20 (A–H)','Heroes 21–40 (H–R)','Heroes 41
 function view(state, nonce) {
   const { group, hero, start, end, items } = state;
   const subtotal = items.reduce((sum, item) => sum + item.cost, 0);
-  const current = hero !== null && end > start ? tiers[end][1] - tiers[start][1] : null;
+  const current = hero !== null && end > start ? boostPrice(heroes[hero], start, end) : null;
   const lines = items.map((x,i) => `**${i+1}.** ${x.hero}: ${tiers[x.start][0]} → ${tiers[x.end][0]} — **${money(x.cost)}**`);
   const description = [
     'Choose a hero, current proficiency and desired proficiency. Click **Add Character** to include it in your estimate.',
@@ -41,14 +60,14 @@ function view(state, nonce) {
   ].join('\n');
   const embed = new EmbedBuilder().setColor(0x5865F2).setTitle('🌟 Lord Boost Calculator')
     .setDescription(description.slice(0, 4000))
-    .setFooter({ text: 'Price estimate only · Champion = level 50 · +$60 per five levels afterward' });
+    .setFooter({ text: 'Price estimate only · Selected heroes have custom pricing · Champion = level 50' });
   const select = (id, placeholder, opts, selected) => new ActionRowBuilder().addComponents(
     new StringSelectMenuBuilder().setCustomId(`lordcalc_${id}:${nonce}`).setPlaceholder(placeholder)
       .addOptions(opts.map(x => ({ ...x, default: x.value === String(selected) })))
   );
   const groupOptions = groupLabels.map((label, i) => ({ label, value: String(i) }));
   const heroOptions = groups[group].map((name, i) => ({ label: name, value: String(groupStart[group] + i) }));
-  const levelOptions = tiers.map(([name, price], i) => ({ label: `${name} — $${price}`, value: String(i) }));
+  const levelOptions = tiers.map(([name, price], i) => ({ label: `${name} — ${money(hero === null ? price : cumulativePrice(heroes[hero], i))}`, value: String(i) }));
   const rows = [
     select('group','Select character group',groupOptions,group),
     select('hero','Select Marvel Rivals character',heroOptions,hero),
@@ -98,7 +117,7 @@ export default {
             return i.reply({ content: 'Choose a character and a desired level above its current level.', flags: MessageFlags.Ephemeral });
           if (state.items.length >= 15)
             return i.reply({ content: 'Maximum 15 characters per estimate. Calculate your total or reset.', flags: MessageFlags.Ephemeral });
-          state.items.push({ hero: heroes[state.hero], start: state.start, end: state.end, cost: tiers[state.end][1] - tiers[state.start][1] });
+          state.items.push({ hero: heroes[state.hero], start: state.start, end: state.end, cost: boostPrice(heroes[state.hero], state.start, state.end) });
           state.hero = null;
         } else if (action === 'lordcalc_request') {
           return i.update({components:[new ActionRowBuilder().addComponents(
@@ -123,7 +142,7 @@ export default {
           } catch { return i.editReply({content:'Could not submit the request. Please try again.',embeds:[],components:[]}); }
         } else if (action === 'lordcalc_total') {
           const pending = state.hero !== null && state.end > state.start
-            ? [{ hero: heroes[state.hero], start: state.start, end: state.end, cost: tiers[state.end][1] - tiers[state.start][1] }] : [];
+            ? [{ hero: heroes[state.hero], start: state.start, end: state.end, cost: boostPrice(heroes[state.hero], state.start, state.end) }] : [];
           const all = [...state.items, ...pending];
           if (!all.length) return i.reply({ content: 'Add or select at least one character with a higher desired level first.', flags: MessageFlags.Ephemeral });
           const total = all.reduce((sum, x) => sum + x.cost, 0);
