@@ -62,6 +62,10 @@ export default {
       if (!item || typeof item !== 'object') continue;
       push(item.timestamp, `🔄 **Order reopened** · By ${mention(item.by)} · Reason: ${clean(item.reason, 130)}`);
     }
+    for (const item of (Array.isArray(order.cancellation_history) ? order.cancellation_history : [])) {
+      if (!item || typeof item !== 'object') continue;
+      push(item.timestamp, `❌ **Cancellation approved** · By ${mention(item.by)} · Reason: ${clean(item.reason, 130)}`);
+    }
     for (const item of transfers)
       push(item.timestamp, `🔁 **Reassigned** · ${mention(item.from_booster_id)} → ${mention(item.to_booster_id)} · By ${mention(item.by)}`);
     if (validTime(order.archived_at))
