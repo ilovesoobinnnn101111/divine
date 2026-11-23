@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, EmbedBuilder, MessageFlags } from 'discord.js';
 import { readRecords, withRecordLock } from '../../services/farm/records.js';
 import { farmConfig, memberHasFarmRole } from '../../services/farm/config.js';
+import { postBoostTicketUpdate } from '../../services/farm/boostRequests.js';
 
 const managerRoles = () => (process.env.BOOSTER_MANAGER_ROLE_ID || '').split(',').map(x => x.trim()).filter(Boolean);
 const emoji = { Pending:'🟡', 'In Progress':'🔵', Completed:'✅', Cancelled:'❌', Failed:'⚠️' };
@@ -54,6 +55,17 @@ export default {
       ).setFooter({text:`By ${interaction.user.username}`}).setTimestamp();
     if (notes) embed.addFields({name:'📝 Update',value:notes,inline:false});
     await interaction.editReply({embeds:[embed],allowedMentions:{parse:[]}});
+    if (a.request_id) {
+      try {
+        const request = (await readRecords(client, interaction.guildId, 'boostRequests'))
+          .find(x => x.request_id === a.request_id);
+        if (request) await postBoostTicketUpdate(client, request, {
+          title: `📋 Boost Order · ${status}`,
+          description: `Order ${orderId} is now ${status}.${notes ? '\\nNotes: ' + notes : ''}`,
+          color: colors[status] || 0x95A5A6
+        });
+      } catch { /* Ticket may be unavailable; order status remains saved. */ }
+    }
     try {
       const booster = await client.users.fetch(a.booster_id);
       await booster.send(`📋 Order \`${orderId}\` is now **${status}**.${notes ? `\nNotes: ${notes}` : ''}`);
