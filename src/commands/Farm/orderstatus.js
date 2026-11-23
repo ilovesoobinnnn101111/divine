@@ -4,6 +4,7 @@ import { memberHasFarmRole } from '../../services/farm/config.js';
 
 const managerRoles = () => (process.env.BOOSTER_MANAGER_ROLE_ID || '').split(',').map(x => x.trim()).filter(Boolean);
 const emoji = { Pending:'🟡', 'In Progress':'🔵', Completed:'✅', Cancelled:'❌', Failed:'⚠️' };
+const priorityEmoji = { Low: '⚪', Normal: '🔵', High: '🟠', Urgent: '🔴' };
 const colors = { Pending:0xF1C40F, 'In Progress':0x3498DB, Completed:0x2ECC71, Cancelled:0x95A5A6, Failed:0xE74C3C };
 export default {
   data: new SlashCommandBuilder().setName('orderstatus').setDescription('Look up a booster order and its status history')
@@ -28,6 +29,7 @@ export default {
       .addFields(
         { name: '👤 Booster', value: `<@${a.booster_id}>`, inline: true },
         { name: '📌 Status', value: a.status || 'Unknown', inline: true },
+        { name: '🚩 Priority', value: `${priorityEmoji[a.priority] || '🔵'} ${['Low', 'Normal', 'High', 'Urgent'].includes(a.priority) ? a.priority : 'Normal'}`, inline: true },
         { name: '📁 Category', value: a.category || 'Unknown', inline: true },
         { name: '🦸 Hero', value: a.hero || 'Unknown', inline: true },
         { name: '📊 Level', value: a.level || 'Unknown', inline: true },
