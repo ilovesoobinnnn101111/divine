@@ -54,6 +54,10 @@ export default {
       if (!item || typeof item !== 'object') continue;
       push(item.timestamp, `📩 **Reminder ${item.delivered ? 'delivered' : 'failed'}** · To ${mention(item.to_booster_id)} · By ${mention(item.by)}${item.message ? ` · Message: ${clean(item.message, 130)}` : ''}`);
     }
+    for (const item of (Array.isArray(order.completion_history) ? order.completion_history : [])) {
+      if (!item || typeof item !== 'object') continue;
+      push(item.timestamp, `✅ **Completion approved** · By ${mention(item.by)}${item.notes ? ` · Notes: ${clean(item.notes, 130)}` : ''}`);
+    }
     for (const item of transfers)
       push(item.timestamp, `🔁 **Reassigned** · ${mention(item.from_booster_id)} → ${mention(item.to_booster_id)} · By ${mention(item.by)}`);
     if (validTime(order.archived_at))
