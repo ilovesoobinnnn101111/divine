@@ -1,4 +1,5 @@
 import { ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageFlags } from 'discord.js';
+import { submitBoostRequest } from '../../services/farm/boostRequests.js';
 
 const ranks = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Grandmaster', 'Celestial', 'Eternity', 'One Above All'];
 const prices = { Solo: [20, 20, 20, 30, 40, 80], Duo: [30, 30, 30, 40, 60, 100] };
@@ -58,11 +59,27 @@ export default {
         else if (action === 'rankcalc_start') state.start = Number(i.values[0]);
         else if (action === 'rankcalc_end') state.end = Number(i.values[0]);
         else if (action === 'rankcalc_reset') Object.assign(state, { mode: 'Solo', start: 0, end: 3 });
+        else if (action === 'rankcalc_request') {
+          const result = estimate(state.start, state.end, state.mode);
+          if (result.error) return i.reply({content:result.error,flags:MessageFlags.Ephemeral});
+          await i.deferUpdate();
+          const summary = `${state.mode}: ${ranks[state.start]} → ${ranks[state.end]}`;
+          try {
+            const response = await submitBoostRequest(i,i.client,{
+              type:'Rank Boost',summary,total:result.negotiable?null:result.total,
+              details:{mode:state.mode,start:ranks[state.start],end:ranks[state.end],negotiable:Boolean(result.negotiable)}
+            });
+            if(response.error)return i.editReply({content:response.error,embeds:[],components:[]});
+            collector.stop('finished');
+            return i.editReply({content:`✅ Request \`${response.request.request_id}\` submitted for manager review. ${response.warning||''}`,embeds:[],components:[]});
+          } catch {return i.editReply({content:'Could not submit request. Please try again.',embeds:[],components:[]});}
+        }
         else if (action === 'rankcalc_done') {
           const result = estimate(state.start, state.end, state.mode);
           if (result.error) return i.reply({ content: result.error, flags: MessageFlags.Ephemeral });
-          await i.update(display(state, nonce, true));
-          collector.stop('finished');
+          await i.update({ ...display(state, nonce, true), components: [new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId(`rankcalc_request:${nonce}`).setStyle(ButtonStyle.Success).setLabel('Request This Boost')
+          )] });
           return;
         }
         await i.update(display(state, nonce));
