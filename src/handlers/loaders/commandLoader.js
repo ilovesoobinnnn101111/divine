@@ -271,6 +271,7 @@ async function registerGlobalCommands(client, clientId, commands, totalSubcomman
   command.name === 'boosterperformance' ||
   command.name === 'boosterhistory' ||
   command.name === 'boosterleaderboard' ||
+  command.name === 'boosterroster' ||
   command.name === 'boosteravailability' ||
   command.name === 'boosternotifications' ||
   command.name === 'boosterdashboard' ||
