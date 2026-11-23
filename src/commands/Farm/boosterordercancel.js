@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageFlags } from 'discord.js';
+import { notifyBooster, notificationText } from '../../services/farm/boosterNotifications.js';
 import { readRecords, withRecordLock } from '../../services/farm/records.js';
 import { farmConfig, memberHasFarmRole } from '../../services/farm/config.js';
 
@@ -81,16 +82,8 @@ export default {
     }
     if (outcome !== 'saved')
       return interaction.editReply({ content: outcome === 'changed' ? 'Order status changed before confirmation. No cancellation applied.' : 'Order no longer exists. Nothing changed.', embeds: [], components: [] });
-    let dm = false;
-    if (/^\d{17,20}$/.test(String(updated.booster_id || ''))) {
-      try {
-        const booster = await client.users.fetch(updated.booster_id);
-        const notification = new EmbedBuilder().setColor(0xE74C3C).setTitle('❌ Booster Order Cancelled')
-          .setDescription(`**Order:** \`${safe(id, 40)}\`\n**Status:** Cancelled\n**Cancelled by:** ${mention(interaction.user.id)}\n**When:** <t:${Math.floor(updated.cancelled_at / 1000)}:f>\n**Reason:** ${safe(reason)}`);
-        await booster.send({ embeds: [notification], allowedMentions: { parse: [] } });
-        dm = true;
-      } catch { /* DMs may be disabled */ }
-    }
+    const delivery=await notifyBooster(client,interaction.guildId,{orderId:id,recipientId:updated.booster_id,type:'cancelled',message:notificationText('❌ Divine order cancelled',updated,`Reason: ${reason}`)});
+    const dm=delivery.status==='Delivered';
     const result = new EmbedBuilder().setColor(0xE74C3C).setTitle('❌ Order Cancelled')
       .setDescription(`**Order:** \`${safe(id, 40)}\`\n**Booster:** ${mention(updated.booster_id)}\n**Status:** Cancelled\n**Cancelled by:** ${mention(interaction.user.id)}\n**When:** <t:${Math.floor(updated.cancelled_at / 1000)}:f>\n**Reason:** ${safe(reason)}\n**Booster DM:** ${dm ? 'Delivered' : 'Not delivered'}`)
       .setFooter({ text: 'Saved to PostgreSQL · Existing order history preserved' }).setTimestamp();
