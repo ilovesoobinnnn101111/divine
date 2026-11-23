@@ -2,6 +2,7 @@ import { SlashCommandBuilder, EmbedBuilder, MessageFlags } from 'discord.js';
 import { readRecords } from '../../services/farm/records.js';
 
 const statusEmoji = { Pending: '🟡', 'In Progress': '🔵', Completed: '✅', Cancelled: '❌', Failed: '⚠️' };
+const priorityEmoji = { Low: '⚪', Normal: '🔵', High: '🟠', Urgent: '🔴' };
 const activeStatuses = new Set(['Pending', 'In Progress']);
 
 export default {
@@ -24,7 +25,8 @@ export default {
       const hero = String(order.hero || 'Unknown').slice(0, 60);
       const level = String(order.level || 'Unknown').slice(0, 60);
       const status = order.status || 'Unknown';
-      return `${statusEmoji[status] || '⚪'} \`${id}\` — **${hero}** (${level}) · ${status}`;
+      const priority = ['Low', 'Normal', 'High', 'Urgent'].includes(order.priority) ? order.priority : 'Normal';
+      return `${statusEmoji[status] || '⚪'} \`${id}\` — **${hero}** (${level}) · ${status} · ${priorityEmoji[priority]} ${priority}`;
     };
     const embed = new EmbedBuilder().setColor(0x3498DB).setTitle('📋 My Booster Orders')
       .setDescription(`**Total:** ${orders.length}  |  **Active:** ${active.length}  |  **Completed:** ${completed.length}  |  **Other:** ${other.length}\n\nUse \`/orderstatus\` with an order ID for full details.`)
