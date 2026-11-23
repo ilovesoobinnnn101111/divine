@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageFlags, ComponentType } from 'discord.js';
+import { availabilityRows, availabilityOf, availabilityIcon } from '../../services/farm/boosterAvailability.js';
 import { notifyBooster, notificationText } from '../../services/farm/boosterNotifications.js';
 import { readRecords, withRecordLock } from '../../services/farm/records.js';
 import { farmConfig, memberHasFarmRole } from '../../services/farm/config.js';
@@ -23,6 +24,7 @@ export default {
     const booster = interaction.options.getUser('new_booster', true);
     if (booster.bot) return interaction.reply({ content: 'Select a human booster, not a bot.', flags: MessageFlags.Ephemeral });
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+    const availability=availabilityOf(await availabilityRows(client,interaction.guildId),booster.id);
     const orders = await readRecords(client, interaction.guildId, 'boosterOrders');
     const order = orders.find(item => item.order_id === id);
     if (!order) return interaction.editReply({ content: `Active order \`${safe(id, 40)}\` was not found.` });
@@ -32,7 +34,7 @@ export default {
       new ButtonBuilder().setCustomId(`reassign:cancel:${interaction.id}`).setLabel('Cancel').setStyle(ButtonStyle.Secondary)
     );
     const embed = new EmbedBuilder().setColor(0xF39C12).setTitle('🔁 Confirm Booster Reassignment')
-      .setDescription(`**Order:** \`${safe(id, 40)}\`\n**Current booster:** ${mention(order.booster_id)}\n**New booster:** ${mention(booster.id)}\n**Hero:** ${safe(order.hero)}\n**Status:** ${safe(order.status, 30)}\n\nThe existing status and history will be preserved.`);
+      .setDescription(`**Order:** \`${safe(id, 40)}\`\n**Current booster:** ${mention(order.booster_id)}\n**New booster:** ${mention(booster.id)}\n**Hero:** ${safe(order.hero)}\n**Status:** ${safe(order.status, 30)}\n\n${availability==='Busy'||availability==='Offline'?`⚠️ New booster is ${availabilityIcon(availability)} ${availability}.\\n\\n`:''}The existing status and history will be preserved.`);
     const response = await interaction.editReply({ embeds: [embed], components: [row], allowedMentions: { parse: [] } });
     let click;
     try {
