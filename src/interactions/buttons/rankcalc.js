@@ -60,6 +60,17 @@ export default {
         else if (action === 'rankcalc_end') state.end = Number(i.values[0]);
         else if (action === 'rankcalc_reset') Object.assign(state, { mode: 'Solo', start: 0, end: 3 });
         else if (action === 'rankcalc_request') {
+          return i.update({components:[new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId(`rankcalc_openticket:${nonce}`).setStyle(ButtonStyle.Success).setLabel('Open Boost Ticket'),
+            new ButtonBuilder().setCustomId(`rankcalc_back:${nonce}`).setStyle(ButtonStyle.Secondary).setLabel('Back')
+          )]});
+        }
+        else if (action === 'rankcalc_back') {
+          return i.update({components:[new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId(`rankcalc_request:${nonce}`).setStyle(ButtonStyle.Success).setLabel('Request This Boost')
+          )]});
+        }
+        else if (action === 'rankcalc_openticket') {
           const result = estimate(state.start, state.end, state.mode);
           if (result.error) return i.reply({content:result.error,flags:MessageFlags.Ephemeral});
           await i.deferUpdate();
