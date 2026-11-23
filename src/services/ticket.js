@@ -12,6 +12,7 @@ import { buildStandardLogEmbed, formatLogLine } from '../utils/logging/logEmbeds
 import { getGuildConfig } from './config/guildConfig.js';
 import { getTicketData, saveTicketData, deleteTicketData, getOpenTicketCountForUser, incrementTicketCounter } from '../utils/database.js';
 import { logger } from '../utils/logger.js';
+import { archiveTicketTranscript } from './ticketTranscript.js';
 import { createEmbed, errorEmbed } from '../utils/embeds.js';
 import { logTicketEvent } from '../utils/ticket/ticketLogging.js';
 import { createError, ErrorTypes } from '../utils/errorHandler.js';
@@ -245,6 +246,9 @@ export async function closeTicket(channel, closer, reason = 'No reason provided'
     const closedCategoryId = config.ticketClosedCategoryId || null;
     let movedToClosedCategory = false;
     
+    // Archive before restricting access or changing ticket state; fail safely if upload fails.
+    const transcript = await archiveTicketTranscript(channel, ticketData, closer, reason);
+    ticketData.transcript = transcript;
     ticketData.status = 'closed';
     ticketData.closedBy = closer.id;
     ticketData.closedAt = new Date().toISOString();
