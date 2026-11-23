@@ -33,8 +33,8 @@ export default {
     const record = { rating_id: `TRAINER-${interaction.id}`, trainerId: trainer.id, reviewerId: interaction.user.id, rating, comment, timestamp: Date.now() };
     await appendRecord(client, interaction.guildId, 'trainerRatings', record);
     const embed = new EmbedBuilder().setColor(0x9B59B6).setTitle('🎓 Trainer Rating Saved')
-      .setDescription(`**Trainer:** <@${trainer.id}>\n**Rating:** ${'⭐'.repeat(rating)} (${rating}/5)\n**Review:** ${comment}`)
-      .setFooter({ text: `Rating ID: ${record.rating_id}` }).setTimestamp();
+      .setDescription(`**Trainer:** <@${trainer.id}>\n**Rating:** ${'⭐'.repeat(rating)} (${rating}/5)\n**Review:** ${comment}\n\n**📋 Rating ID (copy this to remove the review):**\n\`${record.rating_id}\``)
+      .setFooter({ text: 'Keep the Rating ID for moderation' }).setTimestamp();
     return interaction.editReply({ embeds: [embed], allowedMentions: { parse: [] } });
   }
 };
