@@ -1,7 +1,7 @@
 import { MessageFlags } from 'discord.js';
 import { readRecords, withRecordLock, appendRecord } from '../../services/farm/records.js';
 import { farmConfig } from '../../services/farm/config.js';
-import { requestManager, requestEmbed, safeRequest } from '../../services/farm/boostRequests.js';
+import { requestManager, requestEmbed, safeRequest, postBoostTicketUpdate } from '../../services/farm/boostRequests.js';
 
 export default {
  name:'boostreviewmodal',
@@ -63,6 +63,16 @@ export default {
     const msg=await channel?.messages?.fetch(req.review_message_id).catch(()=>null);
     if(msg)await msg.edit({embeds:[requestEmbed(req)],components:[],allowedMentions:{parse:[]}}).catch(()=>{});
   } catch {}
+  try {
+    await postBoostTicketUpdate(client,req,{
+      title:action==='accept'?(orderSaved?'✅ Boost Request Accepted':'⚠️ Assignment Needs Attention'):'❌ Boost Request Declined',
+      description:action==='accept'
+        ?orderSaved?`Request ${id} was accepted by <@${interaction.user.id}>.\\n**Order ID:** \\`${req.order_id}\\`\\n**Assigned booster:** <@${booster.id}>\\n**Order status:** Pending`
+          :`Request ${id} was accepted, but creating the linked order failed. A manager must resolve this before work begins.`
+        :`Request ${id} was declined by <@${interaction.user.id}>.\\n**Reason:** ${safeRequest(value,200)}`,
+      color:action==='accept'?(orderSaved?0x2ECC71:0xE67E22):0xE74C3C
+    });
+  } catch { /* Ticket may have been deleted or bot lacks access. */ }
   try {
     const customer=await client.users.fetch(req.customer_id);
     await customer.send({content:action==='accept'
