@@ -39,6 +39,15 @@ export default {
         { name: '⭐ Breakdown', value: [5,4,3,2,1].map(n => `${n}⭐: ${dist[n-1]}`).join('\n'), inline: true }
       );
     }
+    if (ratings.length) {
+      const recent = [...ratings].sort((a,b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0)).slice(0,5);
+      const lines = recent.map(r => {
+        const when = Number(r.timestamp) > 0 ? `<t:${Math.floor(Number(r.timestamp) / 1000)}:f>` : 'Unknown date';
+        const review = String(r.comment || 'No review text').replace(/@/g, '@\\u200b').slice(0,150);
+        return `**${when}**\n**Rating ID:** \`${String(r.rating_id || 'Unknown').slice(0,80)}\`\n**Review:** ${review}`;
+      });
+      embed.addFields({ name: '📝 Recent Rating IDs & Reviews', value: lines.join('\n\n').slice(0,1024), inline: false });
+    }
     if (sessions.length) {
       const minutes = sessions.reduce((s,r) => s + (Number(r.minutes) || 0), 0);
       const recentMinutes = sessions.filter(r => Number(r.date) > Date.now() - WEEK).reduce((s,r) => s + (Number(r.minutes) || 0), 0);
