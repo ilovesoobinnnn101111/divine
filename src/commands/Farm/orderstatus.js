@@ -35,6 +35,8 @@ export default {
         { name: '📊 Level', value: a.level || 'Unknown', inline: true },
         { name: '📜 Recent History', value: history || 'No history recorded', inline: false }
       ).setTimestamp();
+    const deadline = Number(a.deadline_at);
+    if (Number.isFinite(deadline) && deadline > 0) embed.addFields({ name: '📅 Deadline (UTC)', value: `<t:${Math.floor(deadline / 1000)}:f> (<t:${Math.floor(deadline / 1000)}:R>)${['Pending', 'In Progress'].includes(a.status) && deadline <= Date.now() ? ' 🔴 OVERDUE' : ''}`, inline: false });
     if (a.created_at) embed.addFields({ name: '📅 Assigned', value: `<t:${Math.floor(a.created_at / 1000)}:f>`, inline: true });
     if (a.updated_at) embed.addFields({ name: '🕒 Last Updated', value: `<t:${Math.floor(a.updated_at / 1000)}:R>`, inline: true });
     if (a.notes) embed.addFields({ name: '📝 Notes', value: String(a.notes).slice(0, 1024), inline: false });
