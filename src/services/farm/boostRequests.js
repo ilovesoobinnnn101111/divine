@@ -11,6 +11,15 @@ export const requestEmbed = req => new EmbedBuilder().setColor(req.status === 'P
   .setTitle('📋 Boost Request · ' + req.status)
   .setDescription(`**Request ID:** \`${req.request_id}\`\n**Customer:** <@${req.customer_id}>\n**Type:** ${safe(req.type,40)}\n**Estimate:** ${req.total === null ? 'Negotiable / custom quote' : '$'+Number(req.total).toFixed(2)}\n\n${safe(req.summary,2500)}`)
   .setFooter({text:'Estimate only · No payment processed'}).setTimestamp(req.created_at);
+export async function postBoostTicketUpdate(client, request, { title, description, color = 0x5865F2 }) {
+  if (!request?.ticket_channel_id) return false;
+  const channel = await client.channels.fetch(request.ticket_channel_id).catch(() => null);
+  if (!channel?.send || channel.guildId !== request.guild_id) return false;
+  const embed = new EmbedBuilder().setColor(color).setTitle(title)
+    .setDescription(safe(description, 3900)).setFooter({ text: `Request ${request.request_id} · Ticket updates` }).setTimestamp();
+  await channel.send({ embeds: [embed], allowedMentions: { parse: [] } });
+  return true;
+}
 export const reviewRow = id => new ActionRowBuilder().addComponents(
   new ButtonBuilder().setCustomId('boostreview:accept:'+id).setLabel('Accept Request').setStyle(ButtonStyle.Success),
   new ButtonBuilder().setCustomId('boostreview:decline:'+id).setLabel('Decline Request').setStyle(ButtonStyle.Danger)
