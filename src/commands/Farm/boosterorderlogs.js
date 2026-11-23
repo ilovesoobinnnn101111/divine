@@ -44,6 +44,12 @@ export default {
       if (!item || typeof item !== 'object') continue;
       push(item.timestamp, `🚩 **Priority: ${clean(item.from || 'Normal', 20)} → ${clean(item.to, 20)}** · By ${mention(item.by)}${item.reason ? ` · Reason: ${clean(item.reason, 130)}` : ''}`);
     }
+    for (const item of (Array.isArray(order.deadline_history) ? order.deadline_history : [])) {
+      if (!item || typeof item !== 'object') continue;
+      const from = validTime(item.from) ? stamp(item.from) : 'None';
+      const to = validTime(item.to) ? stamp(item.to) : 'None';
+      push(item.timestamp, `📅 **Deadline changed:** ${from} → ${to} · By ${mention(item.by)}${item.reason ? ` · Reason: ${clean(item.reason, 130)}` : ''}`);
+    }
     for (const item of transfers)
       push(item.timestamp, `🔁 **Reassigned** · ${mention(item.from_booster_id)} → ${mention(item.to_booster_id)} · By ${mention(item.by)}`);
     if (validTime(order.archived_at))
@@ -66,7 +72,7 @@ export default {
       size += lines[i].length + 2;
     }
     const embed = new EmbedBuilder().setColor(0x5865F2).setTitle('📜 Booster Order Activity Log')
-      .setDescription(`**Order:** \`${clean(order.order_id, 40)}\`\n**Record:** ${active.includes(order) ? 'Active' : 'Archived'}\n**Current / last booster:** ${mention(order.booster_id)}\n**Status:** ${clean(order.status, 35)}\n**Priority:** ${clean(order.priority || 'Normal', 20)}\n**Total recorded events:** ${unique.length}\n\n**Timeline${visible.length < lines.length ? ` (latest ${visible.length} events)` : ''}:**\n${visible.join('\n\n') || 'No dated events found.'}`.slice(0, 4096))
+      .setDescription(`**Order:** \`${clean(order.order_id, 40)}\`\n**Record:** ${active.includes(order) ? 'Active' : 'Archived'}\n**Current / last booster:** ${mention(order.booster_id)}\n**Status:** ${clean(order.status, 35)}\n**Priority:** ${clean(order.priority || 'Normal', 20)}\n**Deadline:** ${validTime(order.deadline_at) ? stamp(order.deadline_at) : 'None'}\n**Total recorded events:** ${unique.length}\n\n**Timeline${visible.length < lines.length ? ` (latest ${visible.length} events)` : ''}:**\n${visible.join('\n\n') || 'No dated events found.'}`.slice(0, 4096))
       .setFooter({ text: 'Read-only · Chronological · Based on recorded data only' }).setTimestamp();
     return interaction.editReply({ embeds: [embed], allowedMentions: { parse: [] } });
   }
