@@ -241,7 +241,8 @@ async function registerGlobalCommands(client, clientId, commands, totalSubcomman
     if (testGuildId) {
         if (!/^\d{17,20}$/.test(testGuildId)) throw new Error('TEST_GUILD_ID must be a valid Discord server ID');
         if (!clientId) throw new Error('CLIENT_ID is required for slash command registration');
-        const farmCommands = commands.filter(command => command.name === 'link' ||
+        const farmCommands = commands.filter(command => command.name === 'resetpromotions' ||
+  command.name === 'link' ||
   command.name === 'overdue' ||
   command.name === 'promotioncheck' ||
   command.name === 'searchpromotions' ||
