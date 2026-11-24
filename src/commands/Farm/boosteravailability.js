@@ -1,3 +1,4 @@
+import {isEligibleBooster,eligibleBooster} from '../../services/farm/boosterSecurity.js';
 import { SlashCommandBuilder, EmbedBuilder, MessageFlags } from 'discord.js';
 import { setBoosterAvailability,availabilityOf,availabilityRows,availabilityIcon } from '../../services/farm/boosterAvailability.js';
 import { readRecords } from '../../services/farm/records.js';
@@ -9,6 +10,7 @@ export default {
   if(!interaction.inGuild()||(process.env.TEST_GUILD_ID&&interaction.guildId!==process.env.TEST_GUILD_ID))
    return interaction.reply({content:'Test server only.',flags:MessageFlags.Ephemeral});
   if(!client.db?.isAvailable?.())return interaction.reply({content:'PostgreSQL unavailable.',flags:MessageFlags.Ephemeral});
+  if(!isEligibleBooster(interaction.member))return interaction.reply({content:'Booster role required.',flags:MessageFlags.Ephemeral});
   await interaction.deferReply({flags:MessageFlags.Ephemeral});
   try{
    const status=interaction.options.getString('status');
