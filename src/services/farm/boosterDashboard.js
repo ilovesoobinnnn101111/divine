@@ -35,6 +35,7 @@ export async function renderBoosterDashboard(client,guildId,view='active',select
   embed.addFields({name:'🔎 Selected Order',value:[
    `**ID:** \`${safeRequest(selected.order_id,45)}\``,
    `**Status:** ${safeRequest(selected.status,35)}`,
+   `**Assignment response:** ${safeRequest(selected.assignment_response||'Not tracked (legacy)',50)}`,
    `**Booster:** ${mention(selected.booster_id)}`,
    `**Availability:** ${availabilityIcon(availabilityOf(availabilities,selected.booster_id))} ${availabilityOf(availabilities,selected.booster_id)}`,
    `**Customer:** ${/^\d{17,20}$/.test(String(selected.customer_id||''))?mention(selected.customer_id):safeRequest(selected.customer||'Not specified',80)}`,
