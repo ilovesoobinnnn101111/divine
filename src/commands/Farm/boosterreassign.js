@@ -28,11 +28,12 @@ export default {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     if(!await eligibleBooster(interaction.guild,booster.id))return interaction.editReply('Select a server member with the Booster role.');
     const availability=availabilityOf(await availabilityRows(client,interaction.guildId),booster.id);
-    const workload=await workloadSnapshot(client,interaction.guildId,id);
-    const selected=workload.people.find(x=>x.id===booster.id);
     const orders = await readRecords(client, interaction.guildId, 'boosterOrders');
     const order = orders.find(item => item.order_id === id);
     if (!order) return interaction.editReply({ content: `Active order \`${safe(id, 40)}\` was not found.` });
+    if(!await eligibleBooster(interaction.guild,booster.id,order.category))return interaction.editReply('Select a booster with the role required for this category.');
+    const workload=await workloadSnapshot(client,interaction.guildId,id,interaction.guild,order.category);
+    const selected=workload.people.find(x=>x.id===booster.id);
     if (order.booster_id === booster.id) return interaction.editReply({ content: 'This order is already assigned to that booster.' });
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId(`reassign:confirm:${interaction.id}`).setLabel('Confirm Reassignment').setStyle(ButtonStyle.Success),
