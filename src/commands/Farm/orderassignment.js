@@ -1,3 +1,4 @@
+import {isEligibleBooster,eligibleBooster} from '../../services/farm/boosterSecurity.js';
 import { SlashCommandBuilder, EmbedBuilder, MessageFlags } from 'discord.js';
 import { workloadSnapshot } from '../../services/farm/boosterWorkload.js';
 import { availabilityRows, availabilityOf, availabilityIcon } from '../../services/farm/boosterAvailability.js';
@@ -25,6 +26,7 @@ export default {
     if (!client.db?.isAvailable?.())
       return interaction.reply({ content: 'PostgreSQL is unavailable. No order was assigned.', flags: MessageFlags.Ephemeral });
     const booster = interaction.options.getUser('booster', true);
+    if(!await eligibleBooster(interaction.guild,booster.id))return interaction.reply({content:'Select a server member with the Booster role.',flags:MessageFlags.Ephemeral});
     const hero = interaction.options.getString('hero', true);
     const level = interaction.options.getString('level', true);
     const category = interaction.options.getString('category') || 'Rank Boost';
