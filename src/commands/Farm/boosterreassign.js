@@ -63,6 +63,8 @@ export default {
         const index = latest.findIndex(item => item.order_id === id);
         if (index < 0) return;
         if (latest[index].booster_id !== order.booster_id) { outcome = 'changed'; return; }
+        const manager=await interaction.guild.members.fetch({user:interaction.user.id,force:true}).catch(()=>null);
+        if(!manager||!memberHasFarmRole(manager,managerRoles())||!['Pending','In Progress'].includes(latest[index].status)||!await eligibleBooster(interaction.guild,booster.id,latest[index].category)){outcome='forbidden';return;}
         const now = Date.now();
         updated = {
           ...latest[index],
@@ -83,7 +85,7 @@ export default {
       return interaction.editReply({ content: 'Could not save the reassignment. Please retry.', embeds: [], components: [] });
     }
     if (outcome !== 'saved')
-      return interaction.editReply({ content: outcome === 'changed' ? 'The order was reassigned by someone else. No changes made.' : 'The order no longer exists. No changes made.', embeds: [], components: [] });
+      return interaction.editReply({ content: outcome === 'forbidden' ? 'Order closed or required roles changed. No changes made.' : outcome === 'changed' ? 'The order was reassigned by someone else. No changes made.' : 'The order no longer exists. No changes made.', embeds: [], components: [] });
     const newDelivery=await notifyBooster(client,interaction.guildId,{orderId:id,recipientId:booster.id,type:'reassigned_to',message:notificationText('🔁 Divine order reassigned to you',updated,`Respond in the server using /boosterrespond with order ID ${id}.`)});
     const oldDelivery=await notifyBooster(client,interaction.guildId,{orderId:id,recipientId:order.booster_id,type:'reassigned_from',message:notificationText('↩️ Divine order transferred away from you',updated,`New booster: ${booster.username}`)});
     const dm=newDelivery.status==='Delivered'?'Sent':'Could not deliver (DMs may be disabled)';
