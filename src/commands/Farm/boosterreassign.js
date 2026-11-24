@@ -1,3 +1,4 @@
+import {isEligibleBooster,eligibleBooster} from '../../services/farm/boosterSecurity.js';
 import { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageFlags, ComponentType } from 'discord.js';
 import { workloadSnapshot } from '../../services/farm/boosterWorkload.js';
 import { availabilityRows, availabilityOf, availabilityIcon } from '../../services/farm/boosterAvailability.js';
@@ -25,6 +26,7 @@ export default {
     const booster = interaction.options.getUser('new_booster', true);
     if (booster.bot) return interaction.reply({ content: 'Select a human booster, not a bot.', flags: MessageFlags.Ephemeral });
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+    if(!await eligibleBooster(interaction.guild,booster.id))return interaction.editReply('Select a server member with the Booster role.');
     const availability=availabilityOf(await availabilityRows(client,interaction.guildId),booster.id);
     const workload=await workloadSnapshot(client,interaction.guildId,id);
     const selected=workload.people.find(x=>x.id===booster.id);
