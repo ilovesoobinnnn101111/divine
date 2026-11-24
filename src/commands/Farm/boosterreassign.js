@@ -65,6 +65,7 @@ export default {
           ...latest[index],
           booster_id: booster.id,
           booster_tag: booster.tag,
+          assignment_response:'Awaiting Confirmation', assignment_responded_at:null,
           updated_at: now,
           reassignment_history: [
             ...(Array.isArray(latest[index].reassignment_history) ? latest[index].reassignment_history : []),
@@ -80,7 +81,7 @@ export default {
     }
     if (outcome !== 'saved')
       return interaction.editReply({ content: outcome === 'changed' ? 'The order was reassigned by someone else. No changes made.' : 'The order no longer exists. No changes made.', embeds: [], components: [] });
-    const newDelivery=await notifyBooster(client,interaction.guildId,{orderId:id,recipientId:booster.id,type:'reassigned_to',message:notificationText('🔁 Divine order reassigned to you',updated)});
+    const newDelivery=await notifyBooster(client,interaction.guildId,{orderId:id,recipientId:booster.id,type:'reassigned_to',message:notificationText('🔁 Divine order reassigned to you',updated,`Respond in the server using /boosterrespond with order ID ${id}.`)});
     const oldDelivery=await notifyBooster(client,interaction.guildId,{orderId:id,recipientId:order.booster_id,type:'reassigned_from',message:notificationText('↩️ Divine order transferred away from you',updated,`New booster: ${booster.username}`)});
     const dm=newDelivery.status==='Delivered'?'Sent':'Could not deliver (DMs may be disabled)';
     const result = new EmbedBuilder().setColor(0x2ECC71).setTitle('✅ Booster Order Reassigned')
