@@ -1,3 +1,4 @@
+import {eligibleBooster} from './boosterSecurity.js';
 import {readRecords,withRecordLock} from './records.js';
 import {farmConfig} from './config.js';
 import {availabilityRows,availabilityOf} from './boosterAvailability.js';
@@ -17,12 +18,13 @@ export async function setWorkloadLimit(client,guildId,id,limit,by){
   await client.db.set(`${farmConfig.databasePrefix}${guildId}:boosterWorkloadLimits`,rows);
  });
 }
-export async function workloadSnapshot(client,guildId,excludeOrderId=null){
+export async function workloadSnapshot(client,guildId,excludeOrderId=null,guild=null,category=null){
  const [orders,availability,limits]=await Promise.all([readRecords(client,guildId,'boosterOrders'),availabilityRows(client,guildId),workloadSettings(client,guildId)]);
  const counts=new Map();
  for(const o of orders)if(['Pending','In Progress'].includes(o.status)&&o.order_id!==excludeOrderId&&valid(o.booster_id))counts.set(o.booster_id,(counts.get(o.booster_id)||0)+1);
  const ids=new Set([...availability.map(x=>x.booster_id),...counts.keys(),...limits.map(x=>x.booster_id)].filter(valid));
  const people=[...ids].map(id=>({id,status:availabilityOf(availability,id),count:counts.get(id)||0,limit:limitFor(limits,id)}));
- const recommended=people.filter(x=>x.status==='Available'&&(x.limit===null||x.count<x.limit)).sort((a,b)=>a.count-b.count||a.id.localeCompare(b.id))[0]||null;
- return {people,recommended};
+ const eligible=guild?(await Promise.all(people.map(async x=>await eligibleBooster(guild,x.id,category)?x:null))).filter(Boolean):people;
+ const recommended=eligible.filter(x=>x.status==='Available'&&(x.limit===null||x.count<x.limit)).sort((a,b)=>a.count-b.count||a.id.localeCompare(b.id))[0]||null;
+ return {people:eligible,recommended};
 }
