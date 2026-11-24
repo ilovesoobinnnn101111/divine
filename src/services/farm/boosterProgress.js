@@ -1,8 +1,10 @@
+import {eligibleBooster} from './boosterSecurity.js';
 import { readRecords, withRecordLock } from './records.js';
 import { farmConfig } from './config.js';
 import { requestManager, postBoostTicketUpdate, safeRequest } from './boostRequests.js';
 
 export async function updateBoosterProgress(client, interaction, id, action, note='') {
+ if (!interaction.inGuild() || (process.env.TEST_GUILD_ID && interaction.guildId!==process.env.TEST_GUILD_ID)) return {error:'Test server only.'};
  if (!client.db?.isAvailable?.()) return {error:'PostgreSQL unavailable.'};
  if (!/^ORD-\d{17,20}$/.test(id) || !['start','complete','note'].includes(action)) return {error:'Invalid order or action.'};
  if (action==='note' && note.trim().length<3) return {error:'Progress notes must contain at least 3 characters.'};
@@ -14,6 +16,7 @@ export async function updateBoosterProgress(client, interaction, id, action, not
   if(index<0)return;
   const prev=rows[index];
   if(prev.booster_id!==interaction.user.id&&!requestManager(interaction.member)){outcome='forbidden';return;}
+  if(!requestManager(interaction.member)&&!await eligibleBooster(interaction.guild,interaction.user.id,prev.category)){outcome='forbidden';return;}
   if(!requestManager(interaction.member)&&prev.assignment_response&&prev.assignment_response!=='Accepted'){outcome='unconfirmed';return;}
   if(!['Pending','In Progress'].includes(prev.status)){outcome='closed';return;}
   if(action==='start'&&prev.status!=='Pending'){outcome='already';return;}
