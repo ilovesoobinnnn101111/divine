@@ -1,3 +1,4 @@
+import {isEligibleBooster,eligibleBooster} from '../../services/farm/boosterSecurity.js';
 import { MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { readRecords, withRecordLock, appendRecord } from '../../services/farm/records.js';
 import { farmConfig } from '../../services/farm/config.js';
@@ -22,6 +23,7 @@ export default {
   let booster=null;
   if(action==='accept'){
     booster=await client.users.fetch(value).catch(()=>null);
+    if(!await eligibleBooster(interaction.guild,value))return interaction.editReply('Select a server member with the Booster role.');
     if(!booster||booster.bot)return interaction.editReply({content:'Booster user not found or is a bot. Nothing changed.'});
   }
   let req=null, result='missing';
