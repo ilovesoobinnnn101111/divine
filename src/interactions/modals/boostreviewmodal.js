@@ -26,7 +26,7 @@ export default {
     if(!await eligibleBooster(interaction.guild,value))return interaction.editReply('Select a server member with the Booster role.');
     if(!booster||booster.bot)return interaction.editReply({content:'Booster user not found or is a bot. Nothing changed.'});
   }
-  let req=null, result='missing';
+  let req=null, result='missing',orderSaved=false;
   try {
     await withRecordLock(client,interaction.guildId,'boostRequests',async()=>{
       const rows=await readRecords(client,interaction.guildId,'boostRequests');
@@ -34,15 +34,9 @@ export default {
       if(index<0)return;
       if(rows[index].status!=='Pending'){result='reviewed';return;}
       if(action==='accept'&&!await eligibleBooster(interaction.guild,booster.id,rows[index].type==='Lord Boost'?'Hero Boost':'Rank Boost')){result='wrong_role';return;}
+      if(action==='decline'&&(await readRecords(client,interaction.guildId,'boosterOrders')).some(o=>o.request_id===id)){result='conflict';return;}
       req={...rows[index],status:action==='accept'?'Accepted':'Declined',reviewed_by:interaction.user.id,reviewed_at:Date.now(),
         ...(action==='accept'?{booster_id:booster.id,order_id:'ORD-'+interaction.id}:{decline_reason:value})};
-      rows[index]=req;
-      await client.db.set(`${farmConfig.databasePrefix}${interaction.guildId}:boostRequests`,rows);
-      result='saved';
-    });
-  } catch {return interaction.editReply({content:'Database error while reviewing request. Please check records before retrying.'});}
-  if(result!=='saved')return interaction.editReply({content:result==='wrong_role'?'Booster does not have the required role for this request.':result==='reviewed'?'This request has already been reviewed.':'Request not found.'});
-  let orderSaved=false;
   if(action==='accept'){
     const now=Date.now();
     const d=req.details||{};
@@ -58,9 +52,21 @@ export default {
       status_history:[{status:'Pending',timestamp:now,by:interaction.user.id}],
       created_at:now,updated_at:now
     };
-    try {await appendRecord(client,interaction.guildId,'boosterOrders',record);orderSaved=true;}
-    catch { /* Record review remains accepted; manager must resolve this manually. */ }
+    const existing=await readRecords(client,interaction.guildId,'boosterOrders');
+    const linked=existing.find(o=>o.request_id===id);
+    if(linked){
+      if(linked.booster_id!==booster.id){result='conflict';return;}
+      req.order_id=linked.order_id;
+    }else await appendRecord(client,interaction.guildId,'boosterOrders',record);
+    orderSaved=true;
   }
+
+      rows[index]=req;
+      await client.db.set(`${farmConfig.databasePrefix}${interaction.guildId}:boostRequests`,rows);
+      result='saved';
+    });
+  } catch {return interaction.editReply({content:'Database error while reviewing request. If an order was saved, retry acceptance with the same booster to recover the request.'});}
+  if(result!=='saved')return interaction.editReply({content:result==='conflict'?'An order already exists for this request. Retry acceptance with the original assigned booster or contact a manager.':result==='wrong_role'?'Booster does not have the required role for this request.':result==='reviewed'?'This request has already been reviewed.':'Request not found.'});
   try {
     const channel=await client.channels.fetch(req.review_channel_id).catch(()=>null);
     const msg=await channel?.messages?.fetch(req.review_message_id).catch(()=>null);
