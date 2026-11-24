@@ -14,6 +14,7 @@ export async function updateBoosterProgress(client, interaction, id, action, not
   if(index<0)return;
   const prev=rows[index];
   if(prev.booster_id!==interaction.user.id&&!requestManager(interaction.member)){outcome='forbidden';return;}
+  if(!requestManager(interaction.member)&&prev.assignment_response&&prev.assignment_response!=='Accepted'){outcome='unconfirmed';return;}
   if(!['Pending','In Progress'].includes(prev.status)){outcome='closed';return;}
   if(action==='start'&&prev.status!=='Pending'){outcome='already';return;}
   if(action==='complete'&&prev.status!=='In Progress'){outcome='notstarted';return;}
@@ -28,7 +29,7 @@ export async function updateBoosterProgress(client, interaction, id, action, not
   await client.db.set(`${farmConfig.databasePrefix}${interaction.guildId}:boosterOrders`,rows);
   outcome='saved';
  });
- const errors={missing:'Order not found.',forbidden:'Only the assigned booster or a Booster Manager can update this order.',closed:'This order is already closed.',already:'Order already started.',notstarted:'Start the order before completing it.'};
+ const errors={unconfirmed:'Accept your assignment using /boosterrespond before updating progress. Declined assignments require manager review.',missing:'Order not found.',forbidden:'Only the assigned booster or a Booster Manager can update this order.',closed:'This order is already closed.',already:'Order already started.',notstarted:'Start the order before completing it.'};
  if(outcome!=='saved')return {error:errors[outcome]||'Unable to update order.'};
  const label=action==='start'?'🔵 In Progress':action==='complete'?'✅ Completed':'📝 Progress Note';
  let posted=false;
