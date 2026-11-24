@@ -20,6 +20,7 @@ export default {
     const rows=await readRecords(client,interaction.guildId,'boosterOrders'),i=rows.findIndex(o=>o.order_id===id&&o.booster_id===interaction.user.id);
     if(i<0)return;
     const o=rows[i];
+    if(!await eligibleBooster(interaction.guild,interaction.user.id,o.category))return;
     if(!['Pending','In Progress'].includes(o.status)||o.assignment_response!=='Awaiting Confirmation')return;
     const now=Date.now();
     rows[i]={...o,assignment_response:response,assignment_responded_at:now,assignment_response_history:[...(o.assignment_response_history||[]),{response,booster_id:interaction.user.id,timestamp:now,reason:response==='Declined'?reason:''}]};
