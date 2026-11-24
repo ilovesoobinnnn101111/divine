@@ -39,7 +39,7 @@ export default {
     const record = {
       order_id: orderId, booster_id: booster.id, booster_tag: booster.tag,
       assigned_by: interaction.user.id, assigned_by_tag: interaction.user.tag,
-      hero, level, category, customer, notes, status: 'Pending',
+      hero, level, category, customer, notes, status: 'Pending', assignment_response:'Awaiting Confirmation', assignment_response_history:[],
       status_history: [{ status: 'Pending', timestamp: now, by: interaction.user.id }],
       created_at: now, updated_at: now
     };
@@ -60,6 +60,6 @@ export default {
     if(workload.recommended&&workload.recommended.id!==booster.id)embed.addFields({name:'💡 Recommended Booster',value:`<@${workload.recommended.id}> · ${workload.recommended.count} active orders`});
     if(availability==='Busy'||availability==='Offline')embed.addFields({name:'⚠️ Availability Warning',value:`${availabilityIcon(availability)} Booster is ${availability}. Assignment was still saved.`});
     await interaction.editReply({ embeds: [embed], allowedMentions: { parse: [] } });
-    await notifyBooster(client,interaction.guildId,{orderId,recipientId:booster.id,type:'assignment',message:notificationText('📋 New Divine order assigned',record,`Category: ${category}`)});
+    await notifyBooster(client,interaction.guildId,{orderId,recipientId:booster.id,type:'assignment',message:notificationText('📋 New Divine order assigned',record,`Category: ${category}. Respond in the server using /boosterrespond with order ID ${orderId}.`)});
   }
 };
