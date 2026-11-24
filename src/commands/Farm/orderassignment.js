@@ -31,7 +31,7 @@ export default {
     const category = interaction.options.getString('category') || 'Rank Boost';
     const customer = interaction.options.getString('customer') || null;
     const notes = interaction.options.getString('notes') || '';
-    await interaction.deferReply();
+    await interaction.deferReply({flags:MessageFlags.Ephemeral});
     if(!await eligibleBooster(interaction.guild,booster.id,category))return interaction.editReply('Select a booster with the role required for this category.');
     const availability=availabilityOf(await availabilityRows(client,interaction.guildId),booster.id);
     const workload=await workloadSnapshot(client,interaction.guildId,null,interaction.guild,category);
