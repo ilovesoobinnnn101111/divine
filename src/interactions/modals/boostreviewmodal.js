@@ -33,6 +33,7 @@ export default {
       const index=rows.findIndex(x=>x.request_id===id);
       if(index<0)return;
       if(rows[index].status!=='Pending'){result='reviewed';return;}
+      if(action==='accept'&&!await eligibleBooster(interaction.guild,booster.id,rows[index].type==='Lord Boost'?'Hero Boost':'Rank Boost')){result='wrong_role';return;}
       req={...rows[index],status:action==='accept'?'Accepted':'Declined',reviewed_by:interaction.user.id,reviewed_at:Date.now(),
         ...(action==='accept'?{booster_id:booster.id,order_id:'ORD-'+interaction.id}:{decline_reason:value})};
       rows[index]=req;
@@ -40,7 +41,7 @@ export default {
       result='saved';
     });
   } catch {return interaction.editReply({content:'Database error while reviewing request. Please check records before retrying.'});}
-  if(result!=='saved')return interaction.editReply({content:result==='reviewed'?'This request has already been reviewed.':'Request not found.'});
+  if(result!=='saved')return interaction.editReply({content:result==='wrong_role'?'Booster does not have the required role for this request.':result==='reviewed'?'This request has already been reviewed.':'Request not found.'});
   let orderSaved=false;
   if(action==='accept'){
     const now=Date.now();
