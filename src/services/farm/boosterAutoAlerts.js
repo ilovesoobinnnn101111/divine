@@ -1,4 +1,5 @@
 import { EmbedBuilder } from 'discord.js';
+import { notifyBooster, notificationText } from './boosterNotifications.js';
 import { readRecords, withRecordLock } from './records.js';
 import { farmConfig } from './config.js';
 
@@ -18,6 +19,12 @@ function issues(order,now){
  if(due&&due<=now)found.push({kind:'overdue',signature:String(due),label:'🔴 Overdue deadline'});
  else if(due&&due-now<=24*HOUR)found.push({kind:'due24',signature:String(due),label:'⏰ Deadline within 24 hours'});
  if(!validId(order.booster_id))found.push({kind:'unassigned',signature:'unassigned',label:'👤 Booster needed'});
+ const assigned=Math.max(0,time(order.created_at)||0,...(Array.isArray(order.reassignment_history)?order.reassignment_history.map(x=>time(x.timestamp)||0):[]));
+ if(validId(order.booster_id)&&assigned&&order.assignment_response==='Awaiting Confirmation'){
+  const signature=order.booster_id+':'+assigned;
+  if(now-assigned>=30*60000)found.push({kind:'confirmation_dm',signature,label:'Assignment confirmation reminder'});
+  if(now-assigned>=60*60000)found.push({kind:'confirmation_overdue',signature,label:'⚠️ Assignment awaiting confirmation for 60 minutes'});
+ }
  const last=activity(order);
  if(order.status==='In Progress'&&last&&now-last>=48*HOUR)
   found.push({kind:'stalled',signature:String(last),label:'🕒 No progress for 48 hours'});
@@ -43,6 +50,14 @@ export async function scanBoosterOrderAlerts(client){
   const next={};
   for(const [id,{order,issue}] of current){
    if(state[id]===issue.signature){next[id]=issue.signature;continue;}
+   if(issue.kind==='confirmation_dm'){
+    const delivery=await notifyBooster(client,guildId,{orderId:order.order_id,recipientId:order.booster_id,type:'confirmation_reminder',message:notificationText('⏰ Please confirm your Divine assignment',order,'Use /boosterrespond in the server to accept or decline your assignment.')});
+    // Record one attempt per assignment, including blocked DMs; managers still receive escalation.
+    next[id]=issue.signature;
+    if(delivery.status==='Delivered')sent++;else failed++;
+    await client.db.set(key,{...state,...next});
+    continue;
+   }
    const due=time(order.deadline_at);
    const embed=new EmbedBuilder().setColor(issue.kind==='overdue'?0xE74C3C:0xE67E22)
     .setTitle(issue.label)
@@ -53,6 +68,7 @@ export async function scanBoosterOrderAlerts(client){
     await channel.send({content:role?`<@&${role}>`:'Booster Manager alert',embeds:[embed],
      allowedMentions:{parse:[],roles:role?[role]:[]}});
     next[id]=issue.signature;sent++;
+    await client.db.set(key,{...state,...next});
    }catch(error){failed++;if(state[id]!==undefined)next[id]=state[id];console.error('Booster alert send failed:',error);}
   }
   await client.db.set(key,next);
