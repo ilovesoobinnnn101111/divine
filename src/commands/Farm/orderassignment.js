@@ -26,15 +26,15 @@ export default {
     if (!client.db?.isAvailable?.())
       return interaction.reply({ content: 'PostgreSQL is unavailable. No order was assigned.', flags: MessageFlags.Ephemeral });
     const booster = interaction.options.getUser('booster', true);
-    if(!await eligibleBooster(interaction.guild,booster.id))return interaction.reply({content:'Select a server member with the Booster role.',flags:MessageFlags.Ephemeral});
     const hero = interaction.options.getString('hero', true);
     const level = interaction.options.getString('level', true);
     const category = interaction.options.getString('category') || 'Rank Boost';
     const customer = interaction.options.getString('customer') || null;
     const notes = interaction.options.getString('notes') || '';
     await interaction.deferReply();
+    if(!await eligibleBooster(interaction.guild,booster.id,category))return interaction.editReply('Select a booster with the role required for this category.');
     const availability=availabilityOf(await availabilityRows(client,interaction.guildId),booster.id);
-    const workload=await workloadSnapshot(client,interaction.guildId);
+    const workload=await workloadSnapshot(client,interaction.guildId,null,interaction.guild,category);
     const selected=workload.people.find(x=>x.id===booster.id);
     const now = Date.now();
     const orderId = `ORD-${interaction.id}`;
