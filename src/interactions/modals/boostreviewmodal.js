@@ -51,7 +51,7 @@ export default {
       category:req.type==='Lord Boost'?'Hero Boost':d.mode==='Duo'?'Duo Queue':'Rank Boost',
       customer:req.customer_id,customer_id:req.customer_id,
       notes:`From request ${id}. ${req.summary}`.slice(0,500),request_id:id,
-      estimated_price:req.total,status:'Pending',
+      estimated_price:req.total,status:'Pending',assignment_response:'Awaiting Confirmation',assignment_response_history:[],
       status_history:[{status:'Pending',timestamp:now,by:interaction.user.id}],
       created_at:now,updated_at:now
     };
@@ -94,7 +94,7 @@ export default {
       : `Your boost request ${id} was declined. Reason: ${safeRequest(value,200)}`,allowedMentions:{parse:[]}});
   } catch {}
   if(action==='accept'&&orderSaved){
-    try {await booster.send({content:`You've been assigned boost order ${req.order_id} (request ${id}). See your order commands for details.`,allowedMentions:{parse:[]}});} catch {}
+    try {await booster.send({content:`You've been assigned boost order ${req.order_id} (request ${id}). Use /boosterrespond in the server to accept or decline.`,allowedMentions:{parse:[]}});} catch {}
   }
   return interaction.editReply({content:action==='accept'
     ?orderSaved?`Accepted ${id} and created order ${req.order_id} for <@${booster.id}>.`:`Accepted ${id}, but order creation failed. **Do not accept again.** Check PostgreSQL and manually resolve this request.`
