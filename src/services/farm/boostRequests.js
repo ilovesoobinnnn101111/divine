@@ -25,6 +25,10 @@ export const reviewRow = id => new ActionRowBuilder().addComponents(
   new ButtonBuilder().setCustomId('boostreview:decline:'+id).setLabel('Decline Request').setStyle(ButtonStyle.Danger)
 );
 export async function submitBoostRequest(interaction, client, payload) {
+  if (!client.db?.isAvailable?.() || !interaction.guildId) return {error:'Database or server unavailable.'};
+  return withRecordLock(client,interaction.guildId,'boostSubmission:'+interaction.user.id,()=>submitLocked(interaction,client,payload));
+}
+async function submitLocked(interaction, client, payload) {
   if (!client.db?.isAvailable?.()) return { error:'PostgreSQL unavailable. Request not saved.' };
   if (!interaction.guild || !interaction.member) return {error:'Only server members can open boost tickets.'};
   const managerRoleId = '1571956072913178629';
@@ -34,19 +38,40 @@ export async function submitBoostRequest(interaction, client, payload) {
     type:payload.type, summary:payload.summary, total:payload.total,
     details:payload.details, status:'Pending', created_at:Date.now(), updated_at:Date.now()
   };
+  const existing=(await readRecords(client,interaction.guildId,'boostRequests')).find(x=>x.request_id===req.request_id || (x.customer_id===req.customer_id&&x.type===req.type&&x.summary===req.summary&&x.total===req.total&&['Pending','Ticket Setup'].includes(x.status)&&Date.now()-x.created_at<120000));
+  if(existing){
+    if(existing.ticket_channel_id&&existing.status==='Pending')return {request:existing,ticketChannelId:existing.ticket_channel_id};
+    return {error:'This request is already being processed or needs manager recovery. Reference '+existing.request_id};
+  }
+  req.status='Ticket Setup';
+  try{await appendRecord(client,interaction.guildId,'boostRequests',req);}catch{return {error:'Could not save request. No ticket was opened.'};}
+  const persist=async patch=>withRecordLock(client,interaction.guildId,'boostRequests',async()=>{
+    const rows=await readRecords(client,interaction.guildId,'boostRequests'),i=rows.findIndex(x=>x.request_id===req.request_id);
+    if(i<0)throw new Error('Request record missing');
+    rows[i]={...rows[i],...patch,updated_at:Date.now()};
+    await client.db.set(key(interaction.guildId,'boostRequests'),rows);
+    Object.assign(req,rows[i]);
+  });
   let ticket;
   try {
     const category = await interaction.guild.channels.fetch('1571956074008027142').catch(() => null);
-    if (!category || category.type !== ChannelType.GuildCategory) return {error:'Configured boost ticket category is unavailable.'};
+    if (!category || category.type !== ChannelType.GuildCategory) throw new Error('Configured boost ticket category is unavailable.');
     ticket = await createTicket(interaction.guild, interaction.member, category.id, `Boost request ${req.request_id} — ${payload.type}`);
+    await persist({ticket_channel_id:ticket.channel.id});
     await ticket.channel.permissionOverwrites.edit(managerRoleId, {
       ViewChannel:true,SendMessages:true,ReadMessageHistory:true,AttachFiles:true
     });
+    const manager=interaction.guild.roles.cache.get(managerRoleId);
+    if(!ticket.channel.permissionsFor(manager)?.has(['ViewChannel','SendMessages'])||!ticket.channel.permissionsFor(interaction.member)?.has(['ViewChannel','SendMessages']))throw new Error('Ticket access validation failed');
+    await persist({status:'Pending',review_channel_id:ticket.channel.id});
   } catch (error) {
-    return {error:'Could not open a private ticket. Please check ticket permissions or your open-ticket limit.'};
+    await persist({status:'Ticket Setup',setup_error:String(error.message||error).slice(0,300),...(ticket?.channel?.id?{ticket_channel_id:ticket.channel.id}:{})}).catch(console.error);
+    try{
+      const alert=await client.channels.fetch(process.env.BOOSTER_ALERT_CHANNEL_ID);
+      if(alert?.guildId===interaction.guildId&&alert.send)await alert.send({content:`<@&${managerRoleId}> Boost ticket recovery required: ${req.request_id}${ticket?.channel?.id?' · <#'+ticket.channel.id+'>':''}. Request details preserved. Check ticket records before retrying.`,allowedMentions:{parse:[],roles:[managerRoleId]}});
+    }catch(e){console.error('Ticket recovery alert failed',e);}
+    return {error:'Ticket setup could not finish. Your request was saved for manager recovery: '+req.request_id};
   }
-  req.ticket_channel_id = ticket.channel.id;
-  await appendRecord(client,interaction.guildId,'boostRequests',req);
   try {
     const msg=await ticket.channel.send({
       content:`⏳ Please wait shortly, our <@&${managerRoleId}> will be with you shortly.`,
