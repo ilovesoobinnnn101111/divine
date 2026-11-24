@@ -1,3 +1,4 @@
+import {isEligibleBooster,eligibleBooster} from '../../services/farm/boosterSecurity.js';
 import {SlashCommandBuilder,MessageFlags,EmbedBuilder} from 'discord.js';
 import {readRecords,withRecordLock} from '../../services/farm/records.js';
 import {farmConfig} from '../../services/farm/config.js';
@@ -11,6 +12,7 @@ export default {
   if(!client.db?.isAvailable?.())return interaction.reply({content:'PostgreSQL unavailable.',flags:MessageFlags.Ephemeral});
   const id=interaction.options.getString('order_id',true).trim(),response=interaction.options.getString('response',true),reason=interaction.options.getString('reason')?.trim()||'';
   if(response==='Declined'&&reason.length<3)return interaction.reply({content:'Provide a decline reason of at least 3 characters.',flags:MessageFlags.Ephemeral});
+  if(!isEligibleBooster(interaction.member))return interaction.reply({content:'Booster role required.',flags:MessageFlags.Ephemeral});
   await interaction.deferReply({flags:MessageFlags.Ephemeral});
   let saved=false;
   try{
