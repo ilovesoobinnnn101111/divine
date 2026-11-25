@@ -13,7 +13,7 @@ const stamp = value => {
 export default {
   data: new SlashCommandBuilder().setName('boosterreassignhistory')
     .setDescription('Review an order’s booster reassignment timeline (Booster Manager only)')
-    .addStringOption(option => option.setName('order_id').setDescription('Exact order ID (active or archived)').setRequired(true).setMaxLength(40)),
+    .addStringOption(option => option.setName('order_id').setAutocomplete(true).setDescription('Exact order ID (active or archived)').setRequired(true).setMaxLength(40)),
   async execute(interaction, guildConfig, client) {
     if (!interaction.inGuild() || (process.env.TEST_GUILD_ID && interaction.guildId !== process.env.TEST_GUILD_ID))
       return interaction.reply({ content: 'Test server only.', flags: MessageFlags.Ephemeral });
