@@ -6,7 +6,7 @@ const handler = action => ({
   name: `farm_${action}`,
   async execute(interaction, client) {
     if (!interaction.inGuild()) return interaction.reply({ content: 'Server only.', flags: MessageFlags.Ephemeral });
-    const session = await getActiveFarm(client, interaction.guildId);
+    const session = await getActiveFarm(client, interaction.guildId, interaction.message.id);
     if (!session || session.messageId !== interaction.message.id) return interaction.reply({ content: 'This farm is no longer active.', flags: MessageFlags.Ephemeral });
     if (action === 'removealts') {
       if (session.hostId !== interaction.user.id) return interaction.reply({ content: 'Only the host can remove alt accounts.', flags: MessageFlags.Ephemeral });
