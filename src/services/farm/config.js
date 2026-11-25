@@ -37,5 +37,7 @@ export function getMissingFarmConfig() {
 }
 
 export function memberHasFarmRole(member, roleIds) {
-  return Boolean(member?.roles?.cache && roleIds.some(id => member.roles.cache.has(id)));
+  const roles = member?.roles;
+  if (Array.isArray(roles)) return roleIds.some(id => roles.includes(id));
+  return Boolean(roles?.cache && roleIds.some(id => roles.cache.has(id)));
 }
