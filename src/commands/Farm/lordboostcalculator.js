@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } from 'discord.js';
+import { SlashCommandBuilder, ContainerBuilder, TextDisplayBuilder, SectionBuilder, ThumbnailBuilder, MediaGalleryBuilder, MediaGalleryItemBuilder, SeparatorBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } from 'discord.js';
 import { memberHasFarmRole } from '../../services/farm/config.js';
 import { tiers } from '../../services/farm/lordPricing.js';
 const arrow='<:UtilityArrow:1575069345321582662>';
@@ -20,25 +20,42 @@ export default {
  if(assets.some(a=>!['image/png','image/jpeg','image/gif','image/webp'].includes(a.contentType)||a.size>8000000))return interaction.editReply('Use PNG, JPEG, GIF or WebP images under 8 MB each.');
  const names=assets.map((a,i)=>['header','logo','banner'][i]+'.'+({'image/png':'png','image/jpeg':'jpg','image/gif':'gif','image/webp':'webp'}[a.contentType]));
  const description=[
- '## <a:001_sparkles:1575070315724279918> Lord Boosting Shop <:gwhiteheart:1575080015794536510>',
+ '# <a:001_sparkles:1575070315724279918> Lord Boosting Shop <:gwhiteheart:1575080015794536510>',
  '**Why Choose Us?**',
  '<a:WhiteShootingStar:1575070732503879731> Fast Delivery <a:check:1575070249764528158>',
  '<:yg_exclaim:1573609297231876126> Safe & Verified <a:check:1575070249764528158>',
  '<:yg_exclaim:1573609297231876126> Flexible Schedule <a:check:1575070249764528158>',
- '', '**<:white_sparkle:1575071348173316216> Platforms Supported <:white_sparkle:1575071348173316216>**',
+ '', '## **<:white_sparkle:1575071348173316216> Platforms Supported <:white_sparkle:1575071348173316216>**',
  line('<:steam:1575070382795399270>','Steam'),line('<:epicgames:1575070426839785522>','Epic Games'),line('<:playstation:1575070480182939788>','PlayStation'),line('<:xbox:1575070605957668885>','Xbox'),
- '', '**<a:WhiteShootingStar:1575070732503879731> Proficiency Levels <a:WhiteShootingStar:1575070732503879731>**',
+ '', '## **<a:WhiteShootingStar:1575070732503879731> Proficiency Levels <a:WhiteShootingStar:1575070732503879731>**',
  ...tiers.slice(0,11).map(([name,price],i)=>line(ranks[i],name)+' — '+(i===0?'**Starting Level**':'$'+price)),
  '', '🗳️ **Full Package (Agent → Champion) — $230**','<:09_warningsign:1575061621406175272> **Every 5 Levels After Level 50 — $60**','Prices may vary for certain characters.',
- '', '**<a:001_sparkles:1575070315724279918> Payment Methods Supported <a:001_sparkles:1575070315724279918>**',
+ '', '## **<a:001_sparkles:1575070315724279918> Payment Methods Supported <a:001_sparkles:1575070315724279918>**',
  line('<:Venmo:1575071527555309608>','Venmo'),line('<:Zelle:1575071574640562176>','Zelle'),line('<:54735paypal:1575071618697269359>','PayPal'),line('<:eldorado:1575071660191776798>','Eldorado'),line('<:CashApp:1575070778855129098>','Cash App'),
  '', '**Lord Boost Calculator**','Click Estimate Your Order Cost below.',
- '', '**<a:WhiteShootingStar:1575070732503879731> How To Order <a:WhiteShootingStar:1575070732503879731>**',
+ '', '## **<a:WhiteShootingStar:1575070732503879731> How To Order <a:WhiteShootingStar:1575070732503879731>**',
  arrow+' Open a ticket in <#'+purchase+'>',arrow+' Choose your desired proficiency level',arrow+' Complete payment via your preferred method',arrow+' Coordinate order details with staff; never share passwords or authentication codes in Discord.',arrow+' Wait for your order to be finished',
  '', '<:09_warningsign:1575061621406175272> No refunds after purchase.'
  ].join('\n');
- const embeds=[new EmbedBuilder().setColor(0xF5A9D0).setImage('attachment://'+names[0]),new EmbedBuilder().setColor(0xF5A9D0).setDescription(description).setThumbnail('attachment://'+names[1]).setImage('attachment://'+names[2])];
- const row=new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('lordcalc:open').setStyle(ButtonStyle.Primary).setLabel('Estimate Your Order Cost').setEmoji('1575069926618566716'),new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel('Purchase Lord Boost Here').setURL('https://discord.com/channels/'+interaction.guildId+'/'+purchase));
- try{await channel.send({embeds,components:[row],files:assets.map((a,i)=>({attachment:a.url,name:names[i]})),allowedMentions:{parse:[]}});return interaction.editReply('Shop posted in <#'+shop+'>.');}catch(e){return interaction.editReply('Could not post shop. Check channel permissions and image sizes.');}
+ const text=value=>new TextDisplayBuilder().setContent(value);
+ const separator=()=>new SeparatorBuilder().setDivider(true);
+ const calculator=new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('lordcalc:open').setStyle(ButtonStyle.Primary).setLabel('Estimate Your Order Cost').setEmoji('1575069926618566716'));
+ const order=new ActionRowBuilder().addComponents(new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel('Purchase Lord Boost Here').setURL('https://discord.com/channels/'+interaction.guildId+'/'+purchase));
+ const sections=description.split('\n\n');
+ const container=new ContainerBuilder().setAccentColor(0xF5A9D0)
+ .addSectionComponents(new SectionBuilder().addTextDisplayComponents(text(sections[0])).setThumbnailAccessory(new ThumbnailBuilder().setURL('attachment://'+names[1])));
+ for(const section of sections.slice(1)){
+ if(section.startsWith('<:09_warningsign')&&section.includes('No refunds')){container.addTextDisplayComponents(text(section));continue;}
+ container.addSeparatorComponents(separator()).addTextDisplayComponents(text(section));
+ if(section.includes('**Lord Boost Calculator**'))container.addActionRowComponents(calculator);
+ }
+ container.addActionRowComponents(order).addSeparatorComponents(separator()).addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL('attachment://'+names[2])));
+ let headerMessage;
+ try{
+ headerMessage=await channel.send({files:[{attachment:assets[0].url,name:names[0]}],allowedMentions:{parse:[]}});
+ await channel.send({flags:MessageFlags.IsComponentsV2,components:[container],files:assets.slice(1).map((a,i)=>({attachment:a.url,name:names[i+1]})),allowedMentions:{parse:[]}});
+ return interaction.editReply('Shop posted in <#'+shop+'>.');
+ }catch(e){if(headerMessage)await headerMessage.delete().catch(()=>{});return interaction.editReply('Could not post shop. Check channel permissions and image sizes.');}
+
  }
 };
