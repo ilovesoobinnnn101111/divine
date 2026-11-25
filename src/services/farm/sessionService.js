@@ -59,16 +59,37 @@ export function farmButtons(session) {
 export const farmDuration = type => type === '222' ? 30 : 60;
 export const farmSlots = session => Math.min(12, 1 + session.altAccounts + session.players.length);
 export function farmEmbed(session) {
-  const duration = farmDuration(session.type);
-  const start = session.fullStartedAt;
-  const elapsed = start ? Math.max(0, Date.now() - start) : 0;
-  const progress = Math.min(100, elapsed / (duration * 60000) * 100);
-  const filled = Math.floor(progress / 10);
-  const status = session.completed ? 'Completed' : start ? 'In Progress' : 'Waiting for Players';
-  return new EmbedBuilder().setColor(0xF5A9D0)
-    .setTitle((session.type === 'REGULAR' ? 'Regular' : session.type === 'HYBRID' ? 'Hybrid' : session.type) + ' Farm Session')
-    .setDescription('**Progress**\n**'+progress.toFixed(1)+'%**\n`'+'█'.repeat(filled)+'░'.repeat(10-filled)+'`\n\n**⏱ Time Remaining**\n'+(session.completed ? 'Complete' : start ? '<t:'+Math.floor((start+duration*60000)/1000)+':R>' : duration+' minutes (starts when full)')+'\n\n**♛ Host**\n<@'+session.hostId+'>\n\n**Status**\n'+status+'\n\n**Players**\n'+farmSlots(session)+'/12\n'+([session.hostId,...new Set(session.players.filter(id=>id!==session.hostId))].map(id=>'<@'+id+'>').join(', '))+'\n\n**Alt Accounts**\nHost has '+session.altAccounts+' alt account(s) in the farm.')
-    .setFooter({text: 'Farm session • '+duration+' minutes'}).setTimestamp();
+ const duration=farmDuration(session.type);
+ const start=session.fullStartedAt;
+ const elapsed=start?Math.max(0,Date.now()-start):0;
+ const progress=session.completed?100:Math.min(100,elapsed/(duration*60000)*100);
+ const filled=Math.floor(progress/5);
+ const remaining=Math.max(0,Math.ceil((duration*60000-elapsed)/60000));
+ const type=session.type==='HYBRID'?'Hybrid':session.type==='REGULAR'?'Regular':session.type;
+ const slots=farmSlots(session);
+ const sparkle='<a:001_sparkles:1570367767700316261>';
+ const arrow='<:UtilityArrow:1570348660523278426>';
+ const white='<:gwhitearrow:1543625431713058919>';
+ const branch='<:x_whitearrow:1557670125312807012>';
+ const cross='<:w_xno:1575126942011760642>';
+ const status=session.completed?'COMPLETED':start?'ACTIVE':'WAITING';
+ const end=start?Math.floor((start+duration*60000)/1000):null;
+ const roster=[...new Set([session.hostId,...session.players])].map(id=>'<@'+id+'>').join(' ');
+ const embed=new EmbedBuilder().setColor(0xEBCDDC)
+ .setTitle(sparkle+' Current '+type+' Farm Status')
+ .setDescription('**Progress**\n`'+ '█'.repeat(filled)+'░'.repeat(20-filled)+'`\n`'+progress.toFixed(1)+'%` | **'+(session.completed?'Complete':remaining+'m remaining')+'**')
+ .addFields(
+ {name:branch+' Host',value:arrow+' <@'+session.hostId+'>',inline:true},
+ {name:branch+' Status',value:white+' **'+status+'**'+(end&&!session.completed?'\nEnds <t:'+end+':R>':''),inline:true},
+ {name:branch+' Farm Type',value:arrow+' **'+type+'**',inline:true},
+ {name:branch+' Capacity',value:arrow+' **'+slots+'/12 Players** | '+(slots>=12?cross+' **FULL**':'**'+(12-slots)+' OPEN**')},
+ {name:branch+' Players',value:roster},
+ {name:branch+' Alt Accounts',value:arrow+' '+session.altAccounts+' alt account(s)'}
+ ).setFooter({text:type+' Farm • '+duration+' minutes'});
+ if(end)embed.setTimestamp(end*1000);
+ const banner=process.env.FARM_BANNER_URL;
+ if(banner&&/^https:\/\//i.test(banner))embed.setImage(banner);
+ return embed;
 }
 
 export async function refreshFarmMessage(client, session) {
