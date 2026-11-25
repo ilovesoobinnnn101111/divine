@@ -15,6 +15,7 @@ export default {
   async execute(member) {
     try {
         const { guild, user } = member;
+        void sendJoinPings(member);
         
         const config = await getGuildConfig(member.client, guild.id);
         
@@ -195,4 +196,21 @@ async function assignRoleSafely(member, role) {
     } catch (error) {
         logger.warn(`Failed to assign role ${role.id} to member ${member.id}:`, error);
     }
+}
+
+async function sendJoinPings(member) {
+    if (member.user.bot || member.guild.id !== (process.env.TEST_GUILD_ID || process.env.GUILD_ID)) return;
+    const channels = ['1571956074008027144', '1571956074008027145', '1573658700957093898'];
+    await Promise.allSettled(channels.map(async id => {
+        try {
+            const channel = await member.guild.channels.fetch(id);
+            if (!channel?.isSendable() || !channel.permissionsFor(member)?.has(PermissionFlagsBits.ViewChannel)) return;
+            const ping = await channel.send({ content: '<@' + member.id + '>', allowedMentions: { parse: [], users: [member.id] } });
+            setTimeout(() => {
+                ping.delete().catch(error => logger.warn('Could not delete join ping in ' + id, error));
+            }, 30000);
+        } catch (error) {
+            logger.warn('Could not send join ping in ' + id, error);
+        }
+    }));
 }
