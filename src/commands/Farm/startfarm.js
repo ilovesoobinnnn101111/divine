@@ -10,7 +10,7 @@ export default {
   async execute(interaction, guildConfig, client) {
     if (!interaction.inGuild() || !canHost(interaction.member)) return interaction.reply({ content: 'Only farm hosts can start sessions.', flags: MessageFlags.Ephemeral });
     if (farmConfig.guildId && interaction.guildId !== farmConfig.guildId) return interaction.reply({ content: 'Farm commands are not enabled in this server.', flags: MessageFlags.Ephemeral });
-    if (await getActiveFarm(client, interaction.guildId)) return interaction.reply({ content: 'A farm is already active. End it before starting another.', flags: MessageFlags.Ephemeral });
+    if (await getActiveFarm(client, interaction.guildId, interaction.user.id)) return interaction.reply({ content: 'You already have an active farm. End it before starting another.', flags: MessageFlags.Ephemeral });
     const channel = interaction.channel;
     if (!channel?.send || channel.guildId !== interaction.guildId) return interaction.reply({ content: 'Use this command in a sendable server channel.', flags: MessageFlags.Ephemeral });
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
