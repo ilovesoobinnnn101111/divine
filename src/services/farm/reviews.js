@@ -4,10 +4,13 @@ import { farmConfig } from './config.js';
 export const reviewWindow=21600000;
 export const star='<:Icon_2GreyStars:1575057259099324549>';
 export async function reviewEligibility(client,guildId,id,userId){
- const session=(await readRecords(client,guildId,'completedSessions')).find(s=>s.id===id);
- if(!session||session.reason==='CANCELLED'||Date.now()>=session.endedAt+reviewWindow)return 'This review has closed.';
+ const session=(await readRecords(client,guildId,'completedSessions')).find(s=>id && String(s.id)===String(id));
+ if(!session){console.warn('[farmReview] session missing',{guildId,id});return 'Review session not found. Please contact staff.';}
+ const endedAt=Number(session.endedAt);
+ if(!Number.isFinite(endedAt)||endedAt<=0)return 'Review session timestamp unavailable. Please contact staff.';
+ if(session.reason==='CANCELLED'||Date.now()>=endedAt+reviewWindow)return 'This review has closed.';
  if(session.hostId===userId||!session.playerIds?.includes(userId))return 'Only farm participants can review the host.';
- if((await readRecords(client,guildId,'vouches')).some(v=>v.sessionId===id&&v.voterId===userId))return 'You already reviewed this farm.';
+ if((await readRecords(client,guildId,'vouches')).some(v=>String(v.sessionId)===String(id)&&v.voterId===userId))return 'You already reviewed this farm.';
  return session;
 }
 export async function postReviewPanel(client,guildId,session,channelId){
