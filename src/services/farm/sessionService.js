@@ -29,16 +29,19 @@ export function farmButtons(session) {
   )];
 }
 
+export const farmDuration = type => type === '222' ? 30 : 60;
+export const farmSlots = session => Math.min(12, 1 + session.altAccounts + session.players.length);
 export function farmEmbed(session) {
-  return new EmbedBuilder()
-    .setTitle(`${session.type === 'VIP' ? 'VIP' : 'Regular'} Farm Session`)
-    .setColor(0xD95387)
-    .setDescription(`Hosted by <@${session.hostId}>\n\n**Players (${session.players.length}):**\n${session.players.length ? session.players.map(id => `<@${id}>`).join(', ') : 'No players yet'}`)
-    .addFields(
-      { name: 'Spots filled', value: `${Math.min(12, 1 + session.altAccounts + session.players.length)}/12`, inline: true },
-      { name: 'Alt accounts', value: String(session.altAccounts), inline: true },
-      { name: 'Started', value: `<t:${Math.floor(session.startedAt / 1000)}:R>`, inline: true },
-    );
+  const duration = farmDuration(session.type);
+  const start = session.fullStartedAt;
+  const elapsed = start ? Math.max(0, Date.now() - start) : 0;
+  const progress = Math.min(100, elapsed / (duration * 60000) * 100);
+  const filled = Math.floor(progress / 10);
+  const status = start ? 'In Progress' : 'Waiting for Players';
+  return new EmbedBuilder().setColor(0xF5A9D0)
+    .setTitle((session.type === 'REGULAR' ? 'Regular' : session.type === 'HYBRID' ? 'Hybrid' : session.type) + ' Farm Session')
+    .setDescription('**Progress**\n**'+progress.toFixed(1)+'%**\n`'+'█'.repeat(filled)+'░'.repeat(10-filled)+'`\n\n**⏱ Time Remaining**\n'+(start ? '<t:'+Math.floor((start+duration*60000)/1000)+':R>' : duration+' minutes (starts when full)')+'\n\n**♛ Host**\n<@'+session.hostId+'>\n\n**Status**\n'+status+'\n\n**Players**\n'+farmSlots(session)+'/12\n'+(session.players.length ? session.players.map(id=>'<@'+id+'>').join(', ') : 'No players yet')+'\n\n**Alt Accounts**\nHost has '+session.altAccounts+' alt account(s) in the farm.')
+    .setFooter({text: 'Farm session • '+duration+' minutes'}).setTimestamp();
 }
 
 export async function refreshFarmMessage(client, session) {
