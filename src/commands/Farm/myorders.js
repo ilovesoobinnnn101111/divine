@@ -1,3 +1,4 @@
+import {earningsText,money} from '../../services/farm/boosterEarnings.js';
 import { SlashCommandBuilder, EmbedBuilder, MessageFlags } from 'discord.js';
 import { readRecords } from '../../services/farm/records.js';
 
@@ -28,7 +29,7 @@ export default {
       const priority = ['Low', 'Normal', 'High', 'Urgent'].includes(order.priority) ? order.priority : 'Normal';
       const deadline = Number(order.deadline_at);
       const deadlineText = Number.isFinite(deadline) && deadline > 0 ? ` · 📅 <t:${Math.floor(deadline / 1000)}:R>${activeStatuses.has(status) && deadline <= Date.now() ? ' 🔴 OVERDUE' : ''}` : '';
-      return `${statusEmoji[status] || '⚪'} \`${id}\` — **${hero}** (${level}) · ${status} · ${priorityEmoji[priority]} ${priority}${deadlineText}`;
+      return `${statusEmoji[status] || '⚪'} \`${id}\` — **${hero}** (${level}) · ${status} · ${priorityEmoji[priority]} ${priority}${deadlineText} · Earnings: ${earningsText(order)}`;
     };
     const embed = new EmbedBuilder().setColor(0x3498DB).setTitle('📋 My Booster Orders')
       .setDescription(`**Total:** ${orders.length}  |  **Active:** ${active.length}  |  **Completed:** ${completed.length}  |  **Other:** ${other.length}\n\nUse \`/orderstatus\` with an order ID for full details.`)
