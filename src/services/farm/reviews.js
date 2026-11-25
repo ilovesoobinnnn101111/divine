@@ -3,6 +3,11 @@ import { readRecords, withRecordLock } from './records.js';
 import { farmConfig } from './config.js';
 export const reviewWindow=21600000;
 export const star='<:Icon_2GreyStars:1575057259099324549>';
+export async function resolveReviewSession(client,guildId,message){
+ if(!message?.id)return null;
+ const mapped=await client.db.get(farmConfig.databasePrefix+guildId+':reviewPanel:'+message.id,null);
+ return mapped?String(mapped):message.embeds?.[0]?.footer?.text?.match(/^Farm\s+(\d{17,20})\s*$/)?.[1]||null;
+}
 export async function reviewEligibility(client,guildId,id,userId){
  const session=(await readRecords(client,guildId,'completedSessions')).find(s=>id && String(s.id)===String(id));
  if(!session){console.warn('[farmReview] session missing',{guildId,id});return 'Review session not found. Please contact staff.';}
@@ -22,7 +27,8 @@ export async function postReviewPanel(client,guildId,session,channelId){
  const row=new ActionRowBuilder().addComponents(...[1,2,3,4,5].map(n=>new ButtonBuilder().setCustomId('farm_review_'+n).setLabel(n+'⭐').setStyle(n===5?ButtonStyle.Success:ButtonStyle.Secondary)));
  // The panel message references the original farm ID in its footer for exact session lookup.
  embed.setFooter({text:'Farm '+session.id});
- await channel.send({embeds:[embed],components:[row],allowedMentions:{parse:[]}});
+ const panel=await channel.send({embeds:[embed],components:[row],allowedMentions:{parse:[]}});
+ await client.db.set(farmConfig.databasePrefix+guildId+':reviewPanel:'+panel.id,String(session.id));
 }
 export async function submitReview(client,guildId,id,userId,rating,comment,interactionId){
  return withRecordLock(client,guildId,'vouches',async()=>{
