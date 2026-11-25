@@ -13,7 +13,7 @@ const mention = id => /^\d{17,20}$/.test(String(id || '')) ? `<@${id}>` : 'Unkno
 export default {
   data: new SlashCommandBuilder().setName('boosterreassign')
     .setDescription('Transfer an existing booster order (Booster Manager only)')
-    .addStringOption(option => option.setName('order_id').setDescription('Exact active order ID').setRequired(true).setMaxLength(40))
+    .addStringOption(option => option.setName('order_id').setAutocomplete(true).setDescription('Exact active order ID').setRequired(true).setMaxLength(40))
     .addUserOption(option => option.setName('new_booster').setDescription('Booster receiving the order').setRequired(true)),
   async execute(interaction, guildConfig, client) {
     if (!interaction.inGuild() || (process.env.TEST_GUILD_ID && interaction.guildId !== process.env.TEST_GUILD_ID))
