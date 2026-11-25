@@ -1,4 +1,4 @@
-import { getActiveFarms, getActiveFarm, saveActiveFarm, farmDuration, farmSlots, refreshFarmMessage, completeFarm, syncFarmListing } from './sessionService.js';
+import { getActiveFarms, getActiveFarm, saveActiveFarm, farmDuration, farmSlots, refreshFarmMessage, completeFarm, syncFarmListing, announceFarmStart } from './sessionService.js';
 import { withRecordLock } from './records.js';
 import { farmConfig } from './config.js';
 import { logger } from '../../utils/logger.js';
@@ -22,6 +22,7 @@ export async function tickFarmMonitor(client,guildId){
  await channel.send({content:'**Farm completed!** '+ids.map(id=>'<@'+id+'>').join(' '),allowedMentions:{parse:[],users:ids}});
  continue;
  }
+ if(session.fullStartedAt)await announceFarmStart(client,guildId,session.messageId);
  const interval=Math.floor(elapsed/900000);
  if(interval>(session.lastReminder||0)){
  const channel=await client.channels.fetch(session.channelId);
