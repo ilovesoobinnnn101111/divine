@@ -6,7 +6,7 @@ export default {
  .addStringOption(o=>o.setName('reason').setDescription('Reason').setRequired(true).addChoices({name:'Griefing',value:'GRIEF'},{name:'Disconnect',value:'DC'},{name:'AFK',value:'AFK'},{name:'Player left',value:'LEFT'},{name:'Technical',value:'TECH'},{name:'Other',value:'OTHER'})),
  async execute(interaction,guildConfig,client){
   if(!interaction.inGuild()) return interaction.reply({content:'Server only.',flags:MessageFlags.Ephemeral});
-  const session=await getActiveFarm(client,interaction.guildId);
+  const session=await getActiveFarm(client,interaction.guildId,interaction.user.id);
   if(!session) return interaction.reply({content:'No active farm.',flags:MessageFlags.Ephemeral});
   if(session.hostId!==interaction.user.id&&!isManager(interaction.member)) return interaction.reply({content:'Only the host or a manager can end the farm.',flags:MessageFlags.Ephemeral});
   await completeFarm(client,interaction.guildId,session,'EARLY');
