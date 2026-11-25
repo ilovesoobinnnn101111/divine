@@ -76,8 +76,7 @@ export function farmEmbed(session) {
  const end=start?Math.floor((start+duration*60000)/1000):null;
  const roster=[...new Set([session.hostId,...session.players])].map(id=>'<@'+id+'>').join(' ');
  const embed=new EmbedBuilder().setColor(0xEBCDDC)
- .setTitle(sparkle+' Current '+type+' Farm Status')
- .setDescription('**Progress**\n`'+ '█'.repeat(filled)+'░'.repeat(20-filled)+'`\n`'+progress.toFixed(1)+'%` | **'+(session.completed?'Complete':remaining+'m remaining')+'**')
+ .setDescription('## '+sparkle+' Current '+type+' Farm Status\n\n**Progress**\n`'+ '█'.repeat(filled)+'░'.repeat(20-filled)+'`\n`'+progress.toFixed(1)+'%` | **'+(session.completed?'Complete':remaining+'m remaining')+'**')
  .addFields(
  {name:branch+' Host',value:arrow+' <@'+session.hostId+'>',inline:true},
  {name:branch+' Status',value:white+' **'+status+'**'+(end&&!session.completed?'\nEnds <t:'+end+':R>':''),inline:true},
