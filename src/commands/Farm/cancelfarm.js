@@ -5,7 +5,7 @@ export default {
   data: new SlashCommandBuilder().setName('cancelfarm').setDescription('Cancel your active farm session (hosts only)'),
   async execute(interaction, guildConfig, client) {
     if (!interaction.inGuild() || !canHost(interaction.member)) return interaction.reply({ content: 'Only farm hosts can cancel sessions.', flags: MessageFlags.Ephemeral });
-    const session = await getActiveFarm(client, interaction.guildId);
+    const session = await getActiveFarm(client, interaction.guildId, interaction.user.id);
     if (!session) return interaction.reply({ content: 'No active farm session.', flags: MessageFlags.Ephemeral });
     const isManager = interaction.member.permissions?.has('ManageGuild');
     if (session.hostId !== interaction.user.id && !isManager) return interaction.reply({ content: 'Only the host or a server manager can cancel this farm.', flags: MessageFlags.Ephemeral });
