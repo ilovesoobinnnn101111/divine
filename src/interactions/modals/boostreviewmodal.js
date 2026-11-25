@@ -103,7 +103,7 @@ export default {
       : `Your boost request ${id} was declined. Reason: ${safeRequest(value,200)}`,allowedMentions:{parse:[]}});
   } catch {}
   if(action==='accept'&&orderSaved){
-    try {await booster.send({content:`You've been assigned boost order ${req.order_id} (request ${id}). Use /boosterrespond in the server to accept or decline.`,allowedMentions:{parse:[]}});} catch {}
+    try {await booster.send({content:`You've been assigned boost order ${req.order_id} (request ${id}). Your earnings: Payment pending. Use /boosterrespond in the server to accept or decline.`,allowedMentions:{parse:[]}});} catch {}
   }
   return interaction.editReply({content:action==='accept'
     ?orderSaved?`Accepted ${id} and created order ${req.order_id} for <@${booster.id}>.`:`Accepted ${id}, but order creation failed. **Do not accept again.** Check PostgreSQL and manually resolve this request.`
