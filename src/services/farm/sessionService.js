@@ -22,7 +22,7 @@ export async function saveActiveFarm(client,guildId,session){
  await withRecordLock(client,guildId,'activeStorage',async()=>{
  const rows=await getActiveFarms(client,guildId);
  const i=rows.findIndex(s=>s.messageId===session.messageId);
- if(i>=0)rows[i]=session;
+ if(i>=0)rows[i]={...rows[i],...session,startAnnouncementId:rows[i].startAnnouncementId||session.startAnnouncementId,listingId:rows[i].listingId||session.listingId};
  else {if(rows.some(s=>s.hostId===session.hostId))throw Error('Host already has an active farm');rows.push(session);}
  await client.db.set(key(guildId),rows);
  });
@@ -111,4 +111,19 @@ export async function completeFarm(client, guildId, session, reason = 'COMPLETED
     } else console.warn('Farm end log channel unavailable in configured guild');
   } catch(error){console.error('Farm end log failed:',error);}
   return true;
+}
+
+export async function announceFarmStart(client,guildId,messageId){
+ return withRecordLock(client,guildId,'activeStorage',async()=>{
+ const rows=await getActiveFarms(client,guildId);
+ const farm=rows.find(s=>s.messageId===messageId);
+ if(!farm?.fullStartedAt||farm.startAnnouncementId||Date.now()-farm.fullStartedAt>=farmDuration(farm.type)*60000)return;
+ const channel=await client.channels.fetch(farm.channelId);
+ if((channel.guildId??channel.guild?.id)!==guildId||!channel.send)return;
+ const ids=[...new Set([farm.hostId,...farm.players])];
+ const type=farm.type==='HYBRID'?'Hybrid':farm.type;
+ const message=await channel.send({content:'🎉 **Farm Started!** '+ids.map(id=>'<@'+id+'>').join(' ')+'\nGood luck with your '+type+' farm! ⏰ '+farmDuration(farm.type)+' minutes',allowedMentions:{parse:[],users:ids}});
+ farm.startAnnouncementId=message.id;
+ try{await client.db.set(key(guildId),rows);}catch(error){await message.delete().catch(()=>{});throw error;}
+ });
 }
