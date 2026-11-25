@@ -11,7 +11,7 @@ const priorityColor = { Low: 0x95A5A6, Normal: 0x3498DB, High: 0xE67E22, Urgent:
 export default {
   data: new SlashCommandBuilder().setName('boosterorderreminder')
     .setDescription('DM an assigned booster about an active order (Booster Manager only)')
-    .addStringOption(o => o.setName('order_id').setDescription('Exact active order ID').setRequired(true).setMaxLength(40))
+    .addStringOption(o => o.setName('order_id').setAutocomplete(true).setDescription('Exact active order ID').setRequired(true).setMaxLength(40))
     .addStringOption(o => o.setName('message').setDescription('Optional reminder message').setRequired(false).setMaxLength(500)),
   async execute(interaction, guildConfig, client) {
     if (!interaction.inGuild() || (process.env.TEST_GUILD_ID && interaction.guildId !== process.env.TEST_GUILD_ID))
