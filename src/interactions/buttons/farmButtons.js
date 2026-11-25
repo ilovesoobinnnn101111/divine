@@ -19,8 +19,8 @@ const handler = action => ({
       if (session.hostId !== interaction.user.id && !memberHasFarmRole(interaction.member, farmConfig.roles.manager) && !interaction.member.permissions?.has('ManageGuild')) {
         return interaction.reply({ content: 'Only the host or a manager can end this farm.', flags: MessageFlags.Ephemeral });
       }
-      await completeFarm(client, interaction.guildId, session, 'ENDED');
-      await interaction.update({ content: 'Farm session ended.', embeds: [], components: [] });
+      await completeFarm(client, interaction.guildId, session, 'EARLY');
+      await interaction.update({ content: 'Farm has ended early.', embeds: [], components: [] });
       return;
     }
     if (farmConfig.roles.blacklist && interaction.member.roles?.cache?.has(farmConfig.roles.blacklist)) return interaction.reply({ content: 'You cannot join this farm.', flags: MessageFlags.Ephemeral });
