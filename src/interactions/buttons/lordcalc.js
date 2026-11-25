@@ -4,9 +4,11 @@ import { submitBoostRequest } from '../../services/farm/boostRequests.js';
 import {heroes,tiers,boostPrice} from '../../services/farm/lordPricing.js';
 const money = value => `$${value.toFixed(2)}`;
 const options = arr => arr.map((name, i) => ({ label: name.slice(0, 100), value: String(i) }));
-const groups = [heroes.slice(0, 20), heroes.slice(20, 40), heroes.slice(40)];
-const groupStart = [0,20,40];
-const groupLabels = ['Heroes 1–20 (A–H)','Heroes 21–40 (H–R)','Heroes 41–55 (R–W)'];
+const vanguards = ['Angela','Captain America','Deadpool','Devil Dinosaur','Doctor Strange','Emma Frost','Groot','Hulk','Magneto','Peni Parker','Rogue','The Thing','Thor','Venom'];
+const strategists = ['Adam Warlock','Cloak & Dagger','Deadpool','Gambit','Invisible Woman','Jeff the Land Shark','Loki','Luna Snow','Mantis','Rocket Raccoon','Ultron','White Fox'];
+const damage = heroes.filter(name=>!vanguards.includes(name)&&!strategists.includes(name)||name==='Deadpool');
+const groups = [vanguards,damage.slice(0,25),damage.slice(25),strategists].filter(g=>g.length);
+const groupLabels = ['Vanguard','Duelist (Damage) · 1','Duelist (Damage) · 2','Strategist'];
 
 function view(state, nonce) {
   const { group, hero, start, end, items } = state;
@@ -34,10 +36,10 @@ function view(state, nonce) {
       .addOptions(opts.map(x => ({ ...x, default: x.value === String(selected) })))
   );
   const groupOptions = groupLabels.map((label, i) => ({ label, value: String(i) }));
-  const heroOptions = groups[group].map((name, i) => ({ label: name, value: String(groupStart[group] + i) }));
+  const heroOptions = groups[group].map(name => ({ label: name, value: String(heroes.indexOf(name)) }));
   const levelOptions = tiers.map(([name, price], i) => ({ label: `${name} — ${money(hero === null ? price : boostPrice(heroes[hero], 0, i))}`, value: String(i) }));
   const rows = [
-    select('group','Select character group',groupOptions,group),
+    select('group','Select character role',groupOptions,group),
     select('hero','Select Marvel Rivals character',heroOptions,hero),
     select('start','Current proficiency level',levelOptions,start),
     select('end','Desired proficiency level',levelOptions,end),
