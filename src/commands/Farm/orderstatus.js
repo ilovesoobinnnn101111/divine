@@ -1,3 +1,4 @@
+import {earningsText,money} from '../../services/farm/boosterEarnings.js';
 import { SlashCommandBuilder, EmbedBuilder, MessageFlags } from 'discord.js';
 import { readRecords } from '../../services/farm/records.js';
 import { memberHasFarmRole } from '../../services/farm/config.js';
@@ -35,6 +36,8 @@ export default {
         { name: '📊 Level', value: a.level || 'Unknown', inline: true },
         { name: '📜 Recent History', value: history || 'No history recorded', inline: false }
       ).setTimestamp();
+    embed.addFields({name:'Booster earnings (40%)',value:earningsText(a)});
+    if(manager&&Number.isSafeInteger(a.customer_paid_cents))embed.addFields({name:'Customer payment',value:money(a.customer_paid_cents)},{name:'Divine share (before fees)',value:money(a.customer_paid_cents-a.booster_earnings_cents)});
     const deadline = Number(a.deadline_at);
     if (Number.isFinite(deadline) && deadline > 0) embed.addFields({ name: '📅 Deadline (UTC)', value: `<t:${Math.floor(deadline / 1000)}:f> (<t:${Math.floor(deadline / 1000)}:R>)${['Pending', 'In Progress'].includes(a.status) && deadline <= Date.now() ? ' 🔴 OVERDUE' : ''}`, inline: false });
     if (a.created_at) embed.addFields({ name: '📅 Assigned', value: `<t:${Math.floor(a.created_at / 1000)}:f>`, inline: true });
