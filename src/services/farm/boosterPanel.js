@@ -1,3 +1,4 @@
+import {earningsText,money} from './boosterEarnings.js';
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } from 'discord.js';
 import { readRecords } from './records.js';
 import { requestManager, safeRequest } from './boostRequests.js';
@@ -10,7 +11,7 @@ export async function renderBoosterPanel(client,interaction,selectedId=null){
  const selected=active.find(o=>o.order_id===selectedId)||active[0];
  const embed=new EmbedBuilder().setColor(0x5865F2).setTitle('🎮 Booster Order Control Panel')
   .setDescription(active.length
-   ?`**Active orders:** ${active.length} ${active.length>25?'(showing 25 most recent)':''}\n**Selected:** \`${selected.order_id}\`\n**Status:** ${selected.status}\n**Booster:** <@${selected.booster_id}>\n**Boost:** ${safeRequest(selected.hero,120)}\n**Level:** ${safeRequest(selected.level,120)}`
+   ?`**Active orders:** ${active.length} ${active.length>25?'(showing 25 most recent)':''}\n**Selected:** \`${selected.order_id}\`\n**Status:** ${selected.status}\n**Booster:** <@${selected.booster_id}>\n**Boost:** ${safeRequest(selected.hero,120)}\n**Level:** ${safeRequest(selected.level,120)}\n**Booster earnings:** ${earningsText(selected)}`
    :'No active orders available. Use Refresh Orders to check again.')
   .setFooter({text:manager?'Manager view · select any active order':'Showing your assigned active orders'}).setTimestamp();
  const rows=[];
