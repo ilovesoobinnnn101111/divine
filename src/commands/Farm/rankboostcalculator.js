@@ -42,7 +42,8 @@ export default {
  '', '**Rank Boost Calculator**','Click Estimate Your Order Cost below.',
  '', '## **<a:WhiteShootingStar:1575070732503879731> How To Order <a:WhiteShootingStar:1575070732503879731>**',
  arrow+' Open a ticket in <#'+purchase+'>',arrow+' Choose your desired rank',arrow+' Complete payment via your preferred method',arrow+' Coordinate order details with staff; never share passwords or authentication codes in Discord.',arrow+' Wait for your order to be finished',
- '', '<:09_warningsign:1575061621406175272> No refunds after purchase.'\n ].join('\n');
+ '', '<:09_warningsign:1575061621406175272> No refunds after purchase.'
+ ].join('\n');
  const text=value=>new TextDisplayBuilder().setContent(value);
  const separator=()=>new SeparatorBuilder().setDivider(true);
  const calculator=new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('rankcalc:open').setStyle(ButtonStyle.Primary).setLabel('Estimate Your Order Cost').setEmoji('1575084220768845836'));
