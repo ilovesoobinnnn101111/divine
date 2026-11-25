@@ -9,7 +9,7 @@ const priorityEmoji = { Low: '⚪', Normal: '🔵', High: '🟠', Urgent: '🔴'
 const colors = { Pending:0xF1C40F, 'In Progress':0x3498DB, Completed:0x2ECC71, Cancelled:0x95A5A6, Failed:0xE74C3C };
 export default {
   data: new SlashCommandBuilder().setName('orderstatus').setDescription('Look up a booster order and its status history')
-    .addStringOption(o => o.setName('order_id').setDescription('Order ID (ORD-...)').setRequired(true).setMaxLength(40)),
+    .addStringOption(o => o.setName('order_id').setAutocomplete(true).setDescription('Order ID (ORD-...)').setRequired(true).setMaxLength(40)),
   async execute(interaction, guildConfig, client) {
     if (!interaction.inGuild() || (process.env.TEST_GUILD_ID && interaction.guildId !== process.env.TEST_GUILD_ID))
       return interaction.reply({ content: 'Test server only.', flags: MessageFlags.Ephemeral });
