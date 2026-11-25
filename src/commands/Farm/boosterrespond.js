@@ -4,7 +4,7 @@ import {readRecords,withRecordLock} from '../../services/farm/records.js';
 import {farmConfig} from '../../services/farm/config.js';
 export default {
  data:new SlashCommandBuilder().setName('boosterrespond').setDescription('Accept or decline your assigned booster order')
- .addStringOption(o=>o.setName('order_id').setDescription('Assigned order ID').setRequired(true).setMaxLength(40))
+ .addStringOption(o=>o.setName('order_id').setAutocomplete(true).setDescription('Assigned order ID').setRequired(true).setMaxLength(40))
  .addStringOption(o=>o.setName('response').setDescription('Your response').setRequired(true).addChoices({name:'Accept',value:'Accepted'},{name:'Decline',value:'Declined'}))
  .addStringOption(o=>o.setName('reason').setDescription('Required when declining').setMaxLength(500)),
  async execute(interaction,guildConfig,client){
