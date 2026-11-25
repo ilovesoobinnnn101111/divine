@@ -9,7 +9,7 @@ const mention = id => /^\d{17,20}$/.test(String(id || '')) ? `<@${id}>` : 'Unkno
 export default {
   data: new SlashCommandBuilder().setName('boosterorderfail')
     .setDescription('Mark an active booster order as failed (Booster Manager only)')
-    .addStringOption(o => o.setName('order_id').setDescription('Exact active order ID').setRequired(true).setMaxLength(40))
+    .addStringOption(o => o.setName('order_id').setAutocomplete(true).setDescription('Exact active order ID').setRequired(true).setMaxLength(40))
     .addStringOption(o => o.setName('reason').setDescription('Required failure reason').setRequired(true).setMinLength(3).setMaxLength(500)),
   async execute(interaction, guildConfig, client) {
     if (!interaction.inGuild() || (process.env.TEST_GUILD_ID && interaction.guildId !== process.env.TEST_GUILD_ID))
