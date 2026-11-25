@@ -11,8 +11,8 @@ export default {
     if (!interaction.inGuild() || !canHost(interaction.member)) return interaction.reply({ content: 'Only farm hosts can start sessions.', flags: MessageFlags.Ephemeral });
     if (farmConfig.guildId && interaction.guildId !== farmConfig.guildId) return interaction.reply({ content: 'Farm commands are not enabled in this server.', flags: MessageFlags.Ephemeral });
     if (await getActiveFarm(client, interaction.guildId, interaction.user.id)) return interaction.reply({ content: 'You already have an active farm. End it before starting another.', flags: MessageFlags.Ephemeral });
-    const channel = interaction.channel;
-    if (!channel?.send || channel.guildId !== interaction.guildId) return interaction.reply({ content: 'Use this command in a sendable server channel.', flags: MessageFlags.Ephemeral });
+    const channel = interaction.channel?.send ? interaction.channel : await client.channels.fetch(interaction.channelId).catch(() => null);
+    if (!channel?.send || (channel.guildId ?? channel.guild?.id) !== interaction.guildId) return interaction.reply({ content: 'Use this command in a sendable server channel.', flags: MessageFlags.Ephemeral });
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const session = { hostId: interaction.user.id, type: interaction.options.getString('type'), altAccounts: interaction.options.getInteger('altaccounts'), players: [], startedAt: Date.now(), fullStartedAt: interaction.options.getInteger('altaccounts') === 11 ? Date.now() : null, channelId: channel.id };
     const message = await channel.send({ embeds: [farmEmbed(session)], components: farmButtons(session) });
