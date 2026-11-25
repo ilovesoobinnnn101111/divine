@@ -17,7 +17,7 @@ function parseUTC(value) {
 export default {
   data: new SlashCommandBuilder().setName('boosterorderdeadline')
     .setDescription('Set or remove an active booster order deadline (Booster Manager only)')
-    .addStringOption(option => option.setName('order_id').setDescription('Exact active order ID').setRequired(true).setMaxLength(40))
+    .addStringOption(option => option.setName('order_id').setAutocomplete(true).setDescription('Exact active order ID').setRequired(true).setMaxLength(40))
     .addStringOption(option => option.setName('action').setDescription('Set or remove the deadline').setRequired(true).addChoices(
       { name: 'Set / change deadline', value: 'set' }, { name: 'Remove deadline', value: 'remove' }))
     .addStringOption(option => option.setName('deadline_utc').setDescription('For Set: YYYY-MM-DD HH:mm in UTC, e.g. 2026-12-01 18:30').setRequired(false).setMaxLength(16))
