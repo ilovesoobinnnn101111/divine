@@ -1,6 +1,6 @@
-import { MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } from 'discord.js';
+import { MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, StringSelectMenuBuilder } from 'discord.js';
 import { farmConfig, memberHasFarmRole } from '../../services/farm/config.js';
-import { getActiveFarm, saveActiveFarm, refreshFarmMessage, completeFarm } from '../../services/farm/sessionService.js';
+import { getActiveFarm, saveActiveFarm, refreshFarmMessage, earlyReasons } from '../../services/farm/sessionService.js';
 
 const handler = action => ({
   name: `farm_${action}`,
@@ -16,12 +16,11 @@ const handler = action => ({
       return interaction.showModal(modal);
     }
     if (action === 'end') {
-      if (session.hostId !== interaction.user.id && !memberHasFarmRole(interaction.member, farmConfig.roles.manager) && !interaction.member.permissions?.has('ManageGuild')) {
-        return interaction.reply({ content: 'Only the host or a manager can end this farm.', flags: MessageFlags.Ephemeral });
+      if (session.hostId !== interaction.user.id) {
+        return interaction.reply({ content: 'Only the host who started this farm can end it early.', flags: MessageFlags.Ephemeral });
       }
-      await completeFarm(client, interaction.guildId, session, 'EARLY');
-      await interaction.update({ content: 'Farm has ended early.', embeds: [], components: [] });
-      return;
+      const menu=new StringSelectMenuBuilder().setCustomId('farm_earlyreason').setPlaceholder('Why did the farm end early?').addOptions(Object.entries(earlyReasons).map(([value,label])=>({value:session.messageId+':'+value,label})));
+      return interaction.reply({content:'Select the reason for ending your farm early.',components:[new ActionRowBuilder().addComponents(menu)],flags:MessageFlags.Ephemeral});
     }
     if (farmConfig.roles.blacklist && interaction.member.roles?.cache?.has(farmConfig.roles.blacklist)) return interaction.reply({ content: 'You cannot join this farm.', flags: MessageFlags.Ephemeral });
     if (action === 'join' && interaction.user.id !== session.hostId && !session.players.includes(interaction.user.id) && 1 + session.altAccounts + session.players.length >= 12) {
