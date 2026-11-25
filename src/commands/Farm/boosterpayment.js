@@ -27,6 +27,6 @@ export default {
  });}catch{return interaction.editReply('Payment could not be saved. Check records before retrying.');}
  if(!order)return interaction.editReply('Order not found or cancelled/failed.');
  if(changed)await notifyBooster(client,interaction.guildId,{orderId:id,recipientId:order.booster_id,type:'earnings_updated',message:'Order '+id+' — Your recorded earnings: '+money(order.booster_earnings_cents)+'. No payout has been transferred.'});
- return interaction.editReply({content:'Recorded total: '+money(cents)+' | Booster earnings: '+money(commission(cents))+' | Divine share: '+money(cents-commission(cents))+' (before fees). No payout transferred.',allowedMentions:{parse:[]}});
+ return interaction.editReply({content:'Recorded total: '+money(cents)+' | Booster earnings: '+money(commission(cents))+'. No payout transferred.',allowedMentions:{parse:[]}});
  }
 };
