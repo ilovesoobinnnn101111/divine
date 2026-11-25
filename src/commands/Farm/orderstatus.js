@@ -37,12 +37,12 @@ export default {
         { name: '📜 Recent History', value: history || 'No history recorded', inline: false }
       ).setTimestamp();
     embed.addFields({name:'Booster earnings (40%)',value:earningsText(a)});
-    if(manager&&Number.isSafeInteger(a.customer_paid_cents))embed.addFields({name:'Customer payment',value:money(a.customer_paid_cents)},{name:'Divine share (before fees)',value:money(a.customer_paid_cents-a.booster_earnings_cents)});
+    if(manager&&Number.isSafeInteger(a.customer_paid_cents))embed.addFields({name:'Customer payment',value:money(a.customer_paid_cents)});
     const deadline = Number(a.deadline_at);
     if (Number.isFinite(deadline) && deadline > 0) embed.addFields({ name: '📅 Deadline (UTC)', value: `<t:${Math.floor(deadline / 1000)}:f> (<t:${Math.floor(deadline / 1000)}:R>)${['Pending', 'In Progress'].includes(a.status) && deadline <= Date.now() ? ' 🔴 OVERDUE' : ''}`, inline: false });
     if (a.created_at) embed.addFields({ name: '📅 Assigned', value: `<t:${Math.floor(a.created_at / 1000)}:f>`, inline: true });
     if (a.updated_at) embed.addFields({ name: '🕒 Last Updated', value: `<t:${Math.floor(a.updated_at / 1000)}:R>`, inline: true });
-    if (a.notes) embed.addFields({ name: '📝 Notes', value: String(a.notes).slice(0, 1024), inline: false });
+    if (manager && a.notes) embed.addFields({ name: '📝 Notes', value: String(a.notes).slice(0, 1024), inline: false });
     if (manager && a.customer) embed.addFields({ name: '👥 Customer', value: String(a.customer).slice(0, 1024), inline: false });
     return interaction.editReply({ embeds: [embed], allowedMentions: { parse: [] } });
   }
