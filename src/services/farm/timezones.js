@@ -2,7 +2,7 @@ import { EmbedBuilder } from 'discord.js';
 import { logger } from '../../utils/logger.js';
 const CHANNEL='1571956075018846230';
 const HOST='1571956072896532673';
-const zones=[['Warsaw','Europe/Warsaw'],['Dammam','Asia/Riyadh'],['São Paulo','America/Sao_Paulo'],['Singapore','Asia/Singapore'],['Tokyo','Asia/Tokyo'],['Sydney','Australia/Sydney']];
+const zones=[['🇵🇱 Warsaw','Europe/Warsaw'],['🇸🇦 Dammam','Asia/Riyadh'],['🇧🇷 São Paulo','America/Sao_Paulo'],['🇸🇬 Singapore','Asia/Singapore'],['🇯🇵 Tokyo','Asia/Tokyo'],['🇦🇺 Sydney','Australia/Sydney']];
 const CHECK='<a:32423check:1575061549008167085>';
 const CROSS='<:X_:1575061409140707368>';
 const TITLE='<:yg_exclaim:1573609297231876126>';
