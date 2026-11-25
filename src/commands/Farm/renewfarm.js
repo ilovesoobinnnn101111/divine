@@ -8,9 +8,9 @@ export default {
     if (!interaction.inGuild() || (farmConfig.guildId && interaction.guildId !== farmConfig.guildId)) return interaction.reply({ content: 'Farm commands are not enabled here.', flags: MessageFlags.Ephemeral });
     if (!canHost(interaction.member)) return interaction.reply({ content: 'Host role required.', flags: MessageFlags.Ephemeral });
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-    const farm = await getActiveFarm(client, interaction.guildId);
+    const farm = await getActiveFarm(client, interaction.guildId, interaction.user.id);
     if (!farm || farm.hostId !== interaction.user.id) return interaction.editReply('You do not have an active farm to renew.');
-    farm.startedAt = Date.now();
+    farm.fullStartedAt = Date.now(); farm.lastReminder=0;
     farm.renewalCount = (farm.renewalCount || 0) + 1;
     await saveActiveFarm(client, interaction.guildId, farm);
     await refreshFarmMessage(client, farm);
