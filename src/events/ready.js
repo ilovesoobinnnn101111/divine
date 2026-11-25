@@ -1,3 +1,4 @@
+import { startTimezoneUpdates } from '../services/farm/timezones.js';
 import { Events } from "discord.js";
 import { logger, startupLog } from "../utils/logger.js";
 import config from "../config/application.js";
@@ -5,6 +6,7 @@ import { reconcileReactionRoleMessages } from "../services/reactionRoleService.j
 import { reconcileTicketPanels, reconcileVerificationPanels, reconcileReactionRolePanelHealth } from "../services/panelHealthService.js";
 import { reconcileLevelRoles } from "../services/leveling/levelRoleSyncService.js";
 import { initRiffyAfterReady } from "../services/music/riffySetup.js";
+import { startBoosterOrderAlertMonitor } from "../services/farm/boosterAutoAlerts.js";
 
 export default {
   name: Events.ClientReady,
@@ -13,6 +15,8 @@ export default {
   async execute(client) {
     try {
       client.user.setPresence(config.bot.presence);
+      startBoosterOrderAlertMonitor(client);
+      startTimezoneUpdates(client);
 
       startupLog(`Ready! Logged in as ${client.user.tag}`);
       startupLog(`Serving ${client.guilds.cache.size} guild(s)`);

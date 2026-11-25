@@ -1,3 +1,4 @@
+import { handleTimezoneMessage } from '../services/farm/timezones.js';
 import { Events } from 'discord.js';
 import { logger } from '../utils/logger.js';
 import { getLevelingConfig, getUserLevelData } from '../services/leveling/leveling.js';
@@ -27,6 +28,7 @@ export default {
   async execute(message, client) {
     try {
       if (message.author.bot || !message.guild) return;
+      if (await handleTimezoneMessage(message)) return;
 
       logger.debug(`Message received from ${message.author.tag}: ${message.content}`);
 

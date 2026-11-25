@@ -1,3 +1,6 @@
+import {readRecords} from '../services/farm/records.js';
+import {requestManager} from '../services/farm/boostRequests.js';
+import {earningsText} from '../services/farm/boosterEarnings.js';
 import { Events, MessageFlags } from 'discord.js';
 import { logger } from '../utils/logger.js';
 import { getGuildConfig } from '../services/config/guildConfig.js';
@@ -169,6 +172,17 @@ export default {
             }, interactionTraceContext));
           }
         } else if (interaction.isAutocomplete()) {
+          if(interaction.options.getFocused(true).name==='order_id'&&/^(booster|order)/.test(interaction.commandName)){
+            try{
+              if(!interaction.inGuild()||(process.env.TEST_GUILD_ID&&interaction.guildId!==process.env.TEST_GUILD_ID))return interaction.respond([]);
+              const manager=requestManager(interaction.member);
+              if(!manager&&!['orderstatus','boosterprogress','boosterrespond'].includes(interaction.commandName))return interaction.respond([]);
+              const kind=interaction.commandName==='boosterrestoreorder'?'boosterOrdersArchive':'boosterOrders';
+              const rows=await readRecords(client,interaction.guildId,kind);
+              const q=String(interaction.options.getFocused()).toLowerCase();
+              return interaction.respond(rows.filter(o=>(manager||o.booster_id===interaction.user.id)&&typeof o.order_id==='string'&&[o.order_id,o.hero,o.status].some(v=>String(v||'').toLowerCase().includes(q))).sort((a,b)=>(b.updated_at||0)-(a.updated_at||0)).slice(0,25).map(o=>({name:(o.order_id+' · '+earningsText(o)+' · '+o.hero+' · '+o.status).slice(0,100),value:o.order_id})));
+            }catch{return interaction.respond([]).catch(()=>{});}
+          }
           const autocompleteCommand = client.commands.get(interaction.commandName);
           if (autocompleteCommand?.autocomplete) {
             try {

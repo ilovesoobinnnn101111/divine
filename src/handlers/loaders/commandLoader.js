@@ -237,6 +237,84 @@ function prepareCommandsForRegistration(commands) {
 }
 
 async function registerGlobalCommands(client, clientId, commands, totalSubcommands) {
+    const testGuildId = process.env.TEST_GUILD_ID?.trim();
+    const farmCommands = commands.filter(command => command.name === 'vouch' || command.name === 'boosterhelp' || command.name === 'promoterhelp' || command.name === 'boosterearnings' || command.name === 'boosterpayment' || command.name === 'cancelboostrequest' ||
+  command.name === 'myboostrequests' ||
+  command.name === 'rankboostcalculator' ||
+  command.name === 'lordboostcalculator' ||
+  command.name === 'boosterorderfail' ||
+  command.name === 'boosterordercancel' ||
+  command.name === 'boosterorderreopen' ||
+  command.name === 'boosterordercomplete' ||
+  command.name === 'boosterorderreminder' ||
+  command.name === 'boosterorderdeadline' ||
+  command.name === 'boosterorderpriority' ||
+  command.name === 'boosterordernotes' ||
+  command.name === 'boosterorderlogs' ||
+  command.name === 'boosterreassignhistory' ||
+  command.name === 'boosterreassign' ||
+  command.name === 'boosterassignments' ||
+  command.name === 'boosteralerts' ||
+  command.name === 'boostermonthly' ||
+  command.name === 'boosterweekly' ||
+  command.name === 'boostercompare' ||
+  command.name === 'boosterprofile' ||
+  command.name === 'boosteractivity' ||
+  command.name === 'boosterrestoreorder' ||
+  command.name === 'boosterarchive' ||
+  command.name === 'boosterremoveorder' ||
+  command.name === 'boostersearch' ||
+  command.name === 'boosterreport' ||
+  command.name === 'boosterperformance' ||
+  command.name === 'boosterhistory' ||
+  command.name === 'boosterleaderboard' ||
+  command.name === 'boosterrespond' ||
+  command.name === 'boosterworkload' ||
+  command.name === 'boosterroster' ||
+  command.name === 'boosteravailability' ||
+  command.name === 'boosternotifications' ||
+  command.name === 'boosterdashboard' ||
+  command.name === 'boosterpanel' ||
+  command.name === 'boosterprogress' ||
+  command.name === 'myorders' ||
+  command.name === 'orderstats' ||
+  command.name === 'orderstatus' ||
+  command.name === 'orderupdate' ||
+  command.name === 'orderassignment' ||
+  command.name === 'watcher-panel' ||
+  command.name === 'watcher-report' ||
+  command.name === 'trainerhours' ||
+  command.name === 'trainerratings' ||
+  command.name === 'removetrainerrating' ||
+  command.name === 'resettrainerratings' ||
+  command.name === 'trainerleaderboard' ||
+  command.name === 'trainerstats' ||
+  command.name === 'ratetrainer' ||
+  command.name === 'resetpromotions' ||
+  command.name === 'link' ||
+  command.name === 'overdue' ||
+  command.name === 'promotioncheck' ||
+  command.name === 'searchpromotions' ||
+  command.name === 'mypromotions' ||
+  command.name === 'promoterlog' ||
+  command.name === 'testhostrole' ||
+  command.name === 'testhostannouncement' ||
+  command.name === 'hostoftheweek' ||
+  command.name === 'quotastatus' ||
+  command.name === 'renewfarm' ||
+  command.name === 'activefarms' ||
+  command.name === 'startfarm' || command.name === 'farmhelp' || command.name === 'cancelfarm' || command.name === 'endfarmearly' || command.name === 'hostcheck' || command.name === 'hostleaderboard' || command.name === 'hostlog' || command.name === 'mylogs' || command.name === 'reportplayer' || command.name === 'resetlogs' || command.name === 'searchlogs' || command.name === 'vouchhost' || command.name === 'vouchstats');
+    if (testGuildId) {
+        if (!/^\d{17,20}$/.test(testGuildId)) throw new Error('TEST_GUILD_ID must be a valid Discord server ID');
+        if (!clientId) throw new Error('CLIENT_ID is required for slash command registration');
+
+        if (!farmCommands.some(command => command.name === 'startfarm')) throw new Error('Farm command startfarm was not loaded');
+        validateCommands(farmCommands);
+        logger.info(`Registering ${farmCommands.length} farm commands in test guild ${testGuildId}`);
+        await client.rest.put(`/applications/${clientId}/guilds/${testGuildId}/commands`, { body: farmCommands });
+        logger.info(`Successfully registered ${farmCommands.length} farm test guild commands`);
+        return;
+    }
     if (!clientId) {
         throw new Error('CLIENT_ID is required for slash command registration');
     }
@@ -245,17 +323,29 @@ async function registerGlobalCommands(client, clientId, commands, totalSubcomman
         throw new Error('Discord REST client is not available for slash command registration');
     }
 
-    logger.info(`Preparing to register ${totalSubcommands + commands.length} commands globally`);
+    const guildId = process.env.GUILD_ID?.trim();
+    if (!guildId || !/^\d{17,20}$/.test(guildId)) throw new Error('Valid GUILD_ID required for production farm registration');
+    const farmNames = new Set(farmCommands.map(c => c.name));
+    const globalCommands = commands.filter(c => !farmNames.has(c.name));
+    validateCommands(globalCommands);
+    validateCommands(farmCommands);
+    if (globalCommands.length > MAX_COMMANDS || farmCommands.length > MAX_COMMANDS) throw new Error('Command limit exceeded; registration aborted without truncation');
+    const guildRoute = `/applications/${clientId}/guilds/${guildId}/commands`;
+    const existing = await client.rest.get(guildRoute);
+    const preserved = existing.filter(c => c.type !== 1 || !farmNames.has(c.name)).map(({id,application_id,guild_id,version,...c})=>c);
+    const combined = [...preserved,...farmCommands];
+    if (combined.filter(c => (c.type || 1) === 1).length > MAX_COMMANDS) throw new Error('Guild command limit exceeded; existing commands preserved');
+    await client.rest.put(guildRoute,{body:combined});
+    logger.info(`Registered ${farmCommands.length} farm commands in production guild ${guildId}`);
+    commands = globalCommands;
+    logger.info(`Preparing to register ${commands.length} commands globally`);
     logger.info('Validating commands before registration...');
     validateCommands(commands);
     logger.info('Command validation passed');
 
     const commandsToRegister = prepareCommandsForRegistration(commands);
 
-    if (botConfig.commands?.deleteCommands) {
-        logger.info('Clearing existing global commands before registration...');
-        await client.rest.put(`/applications/${clientId}/commands`, { body: [] });
-    }
+    // Bulk overwrite replaces global commands without a separate destructive clear.
 
     logger.info(`Registering ${commandsToRegister.length} global commands...`);
     await client.rest.put(`/applications/${clientId}/commands`, { body: commandsToRegister });
