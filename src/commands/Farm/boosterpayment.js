@@ -6,7 +6,7 @@ import {money,commission} from '../../services/farm/boosterEarnings.js';
 import {notifyBooster} from '../../services/farm/boosterNotifications.js';
 export default {
  data:new SlashCommandBuilder().setName('boosterpayment').setDescription('Record actual customer payment (Booster Manager only)')
- .addStringOption(o=>o.setName('order_id').setDescription('Order ID').setRequired(true))
+ .addStringOption(o=>o.setName('order_id').setAutocomplete(true).setDescription('Order ID').setRequired(true))
  .addStringOption(o=>o.setName('amount').setDescription('Total USD received, e.g. 300.00 (not an additional payment)').setRequired(true)),
  async execute(interaction,guildConfig,client){
  if(!interaction.inGuild()||(process.env.TEST_GUILD_ID&&interaction.guildId!==process.env.TEST_GUILD_ID)||!requestManager(interaction.member))return interaction.reply({content:'Booster Manager role required in the authorized server.',flags:MessageFlags.Ephemeral});
