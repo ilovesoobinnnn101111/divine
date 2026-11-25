@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { farmConfig } from '../../services/farm/config.js';
-import { canHost, getActiveFarm, saveActiveFarm, farmEmbed, farmButtons } from '../../services/farm/sessionService.js';
+import { canHost, getActiveFarm, saveActiveFarm, farmEmbed, farmButtons, announceFarmStart } from '../../services/farm/sessionService.js';
 
 export default {
   data: new SlashCommandBuilder().setName('startfarm').setDescription('Start a farm session (hosts only)')
@@ -20,5 +20,6 @@ export default {
     try { await saveActiveFarm(client, interaction.guildId, session); }
     catch (error) { await message.delete().catch(() => {}); throw error; }
     await interaction.editReply(`Farm session started in <#${channel.id}>.`);
+    if(session.fullStartedAt)await announceFarmStart(client,interaction.guildId,session.messageId);
   },
 };
