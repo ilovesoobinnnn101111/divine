@@ -8,7 +8,7 @@ const emoji = { Pending:'🟡', 'In Progress':'🔵', Completed:'✅', Cancelled
 const colors = { Pending:0xF1C40F, 'In Progress':0x3498DB, Completed:0x2ECC71, Cancelled:0x95A5A6, Failed:0xE74C3C };
 export default {
   data: new SlashCommandBuilder().setName('orderupdate').setDescription('Update an assigned booster order (Booster Manager only)')
-    .addStringOption(o => o.setName('order_id').setDescription('Order ID from /orderassignment').setRequired(true).setMaxLength(40))
+    .addStringOption(o => o.setName('order_id').setAutocomplete(true).setDescription('Order ID from /orderassignment').setRequired(true).setMaxLength(40))
     .addStringOption(o => o.setName('status').setDescription('New order status').setRequired(true).addChoices(
       {name:'🟡 Pending',value:'Pending'}, {name:'🔵 In Progress',value:'In Progress'},
       {name:'✅ Completed',value:'Completed'}, {name:'❌ Cancelled',value:'Cancelled'}, {name:'⚠️ Failed',value:'Failed'}))
