@@ -238,7 +238,7 @@ function prepareCommandsForRegistration(commands) {
 
 async function registerGlobalCommands(client, clientId, commands, totalSubcommands) {
     const testGuildId = process.env.TEST_GUILD_ID?.trim();
-    const farmCommands = commands.filter(command => command.name === 'boosterearnings' || command.name === 'boosterpayment' || command.name === 'cancelboostrequest' ||
+    const farmCommands = commands.filter(command => command.name === 'boosterhelp' || command.name === 'promoterhelp' || command.name === 'boosterearnings' || command.name === 'boosterpayment' || command.name === 'cancelboostrequest' ||
   command.name === 'myboostrequests' ||
   command.name === 'rankboostcalculator' ||
   command.name === 'lordboostcalculator' ||
