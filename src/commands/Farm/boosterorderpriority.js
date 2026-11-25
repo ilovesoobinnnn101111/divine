@@ -12,7 +12,7 @@ const priorityIcons = { Low: '⚪', Normal: '🔵', High: '🟠', Urgent: '🔴'
 export default {
   data: new SlashCommandBuilder().setName('boosterorderpriority')
     .setDescription('Set an active booster order’s priority (Booster Manager only)')
-    .addStringOption(option => option.setName('order_id').setDescription('Exact active order ID').setRequired(true).setMaxLength(40))
+    .addStringOption(option => option.setName('order_id').setAutocomplete(true).setDescription('Exact active order ID').setRequired(true).setMaxLength(40))
     .addStringOption(option => option.setName('priority').setDescription('New priority level').setRequired(true).addChoices(
       { name: '⚪ Low', value: 'Low' },
       { name: '🔵 Normal', value: 'Normal' },
