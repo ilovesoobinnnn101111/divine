@@ -12,7 +12,7 @@ const emoji = { Pending: '🟡', 'In Progress': '🔵', Completed: '✅', Cancel
 export default {
   data: new SlashCommandBuilder().setName('boosterorderlogs')
     .setDescription('Review all recorded activity for a booster order (Booster Manager only)')
-    .addStringOption(option => option.setName('order_id').setDescription('Exact active or archived order ID').setRequired(true).setMaxLength(40)),
+    .addStringOption(option => option.setName('order_id').setAutocomplete(true).setDescription('Exact active or archived order ID').setRequired(true).setMaxLength(40)),
   async execute(interaction, guildConfig, client) {
     if (!interaction.inGuild() || (process.env.TEST_GUILD_ID && interaction.guildId !== process.env.TEST_GUILD_ID))
       return interaction.reply({ content: 'Test server only.', flags: MessageFlags.Ephemeral });
