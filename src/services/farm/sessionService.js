@@ -27,7 +27,8 @@ export async function saveActiveFarm(client,guildId,session){
  await client.db.set(key(guildId),rows);
  });
 }
-const listingChannel='1571956075366711401';
+const listingChannel=process.env.ACTIVE_FARMS_CHANNEL_ID || '1571956075366711401';
+export const earlyReasons = Object.freeze({DC:'DC',GRIEF:'Griefing',TROLL:'Trolling',OTHER:'Other reason'});
 export async function syncFarmListing(client,guildId,session){
  const channel=await client.channels.fetch(listingChannel).catch(()=>null);
  if(channel?.guildId!==guildId||!channel.isSendable())return;
@@ -65,7 +66,7 @@ export function farmEmbed(session) {
   const status = session.completed ? 'Completed' : start ? 'In Progress' : 'Waiting for Players';
   return new EmbedBuilder().setColor(0xF5A9D0)
     .setTitle((session.type === 'REGULAR' ? 'Regular' : session.type === 'HYBRID' ? 'Hybrid' : session.type) + ' Farm Session')
-    .setDescription('**Progress**\n**'+progress.toFixed(1)+'%**\n`'+'█'.repeat(filled)+'░'.repeat(10-filled)+'`\n\n**⏱ Time Remaining**\n'+(session.completed ? 'Complete' : start ? '<t:'+Math.floor((start+duration*60000)/1000)+':R>' : duration+' minutes (starts when full)')+'\n\n**♛ Host**\n<@'+session.hostId+'>\n\n**Status**\n'+status+'\n\n**Players**\n'+farmSlots(session)+'/12\n'+(session.players.length ? session.players.map(id=>'<@'+id+'>').join(', ') : 'No players yet')+'\n\n**Alt Accounts**\nHost has '+session.altAccounts+' alt account(s) in the farm.')
+    .setDescription('**Progress**\n**'+progress.toFixed(1)+'%**\n`'+'█'.repeat(filled)+'░'.repeat(10-filled)+'`\n\n**⏱ Time Remaining**\n'+(session.completed ? 'Complete' : start ? '<t:'+Math.floor((start+duration*60000)/1000)+':R>' : duration+' minutes (starts when full)')+'\n\n**♛ Host**\n<@'+session.hostId+'>\n\n**Status**\n'+status+'\n\n**Players**\n'+farmSlots(session)+'/12\n'+([session.hostId,...new Set(session.players.filter(id=>id!==session.hostId))].map(id=>'<@'+id+'>').join(', '))+'\n\n**Alt Accounts**\nHost has '+session.altAccounts+' alt account(s) in the farm.')
     .setFooter({text: 'Farm session • '+duration+' minutes'}).setTimestamp();
 }
 
@@ -76,24 +77,38 @@ export async function refreshFarmMessage(client, session) {
 }
 
 /** Save a completed session before removing the active session. */
-export async function completeFarm(client, guildId, session, reason = 'COMPLETED') {
+export async function completeFarm(client, guildId, session, reason = 'COMPLETED', earlyReason = null) {
   const removed=await withRecordLock(client,guildId,'activeStorage',async()=>{
   const rows=await getActiveFarms(client,guildId);
   const current=rows.find(s=>s.messageId===session.messageId);
   if(!current)return null;
-  await appendRecord(client, guildId, 'completedSessions', {
-    id: session.messageId,
-    hostId: session.hostId,
-    playerIds: [...new Set(session.players || [])].filter(id => id !== session.hostId),
-    startedAt: session.startedAt,
-    endedAt: Date.now(),
+  const endedAt=Date.now();
+  const record={
+    id: current.messageId,
+    hostId: current.hostId,
+    playerIds: [...new Set(current.players || [])].filter(id => id !== current.hostId),
+    startedAt: current.startedAt,
+    fullStartedAt: current.fullStartedAt || null,
+    endedAt,
+    durationMs: current.fullStartedAt ? Math.max(0,endedAt-current.fullStartedAt) : 0,
+    type: current.type,
     reason,
-  });
+    earlyReason,
+  };
+  await appendRecord(client,guildId,'completedSessions',record);
    await client.db.set(key(guildId),rows.filter(s=>s.messageId!==session.messageId));
-   return current;
+   return {...current,record};
   });
   if(!removed)return false;
   session.listingId=removed.listingId;
   if(session.listingId){const channel=await client.channels.fetch(listingChannel).catch(()=>null);if(channel?.guildId===guildId)await channel.messages.delete(session.listingId).catch(()=>{});}
+  try {
+    const channel=await client.channels.fetch(process.env.FARM_END_LOG_CHANNEL_ID || '1573919237347741776');
+    if(channel?.guildId===guildId && channel.isSendable()){
+      const r=removed.record, seconds=Math.floor(r.durationMs/1000);
+      const embed=new EmbedBuilder().setColor(reason==='COMPLETED'?0xF5A9D0:0xED4245).setTitle(reason==='COMPLETED'?'Farm completed':reason==='EARLY'?'Farm has ended early':'Farm '+reason.toLowerCase()).addFields({name:'Host',value:'<@'+r.hostId+'>'},{name:'Farm type',value:r.type},{name:'Farming duration',value:Math.floor(seconds/60)+'m '+seconds%60+'s / '+farmDuration(r.type)+'m'},{name:'Ended early',value:reason==='EARLY'||reason==='CANCELLED'?'Yes':'No'},{name:'Reason',value:earlyReasons[earlyReason]||reason}).setTimestamp(r.endedAt);
+      await channel.send({embeds:[embed],allowedMentions:{parse:[]}});
+    } else console.warn('Farm end log channel unavailable in configured guild');
+  } catch(error){console.error('Farm end log failed:',error);}
   return true;
 }
