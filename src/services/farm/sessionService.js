@@ -1,3 +1,4 @@
+import { postReviewPanel } from './reviews.js';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'discord.js';
 import { farmConfig, memberHasFarmRole } from './config.js';
 import { appendRecord, withRecordLock } from './records.js';
@@ -110,6 +111,7 @@ export async function completeFarm(client, guildId, session, reason = 'COMPLETED
       await channel.send({embeds:[embed],allowedMentions:{parse:[]}});
     } else console.warn('Farm end log channel unavailable in configured guild');
   } catch(error){console.error('Farm end log failed:',error);}
+  if(reason!=='CANCELLED')try{await postReviewPanel(client,guildId,removed.record,removed.channelId);}catch(error){console.error('Farm review panel failed:',error);}
   return true;
 }
 
