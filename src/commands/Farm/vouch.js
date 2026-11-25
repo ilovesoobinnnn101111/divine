@@ -21,11 +21,11 @@ export default {
  if(!member)return interaction.editReply('Choose a member of this server.');
  const channel=await interaction.guild.channels.fetch(CHANNEL).catch(()=>null);
  if(!channel?.isTextBased() || !channel.isSendable())return interaction.editReply('The vouch channel is unavailable. Contact staff.');
- const embed=new EmbedBuilder().setColor(0xE5E1DA).setTitle(TITLE+' New Vouch '+TITLE)
+ const embed=new EmbedBuilder().setColor(0xFFFFFF).setTitle(TITLE+' New Vouch '+TITLE)
  .setThumbnail(booster.displayAvatarURL({size:256}))
  .setDescription('> ╰ **From** <@'+interaction.user.id+'>\n> ╰ **For** <@'+booster.id+'>')
  .addFields({name:'Rating',value:'> '+Array(rating).fill(STAR).join(' ')+'  **'+rating+'/5**'},{name:'Review',value:review.split(/\r?\n/).map(line=>'> '+escapeMarkdown(line)).join('\n').slice(0,1024)})
- .setFooter({text:'Thank you for your feedback ₊ ⊹ ♡'}).setTimestamp();
+ .setFooter({text:'Thank You For Your Feedback 𓂃˖ ࣪⊹'}).setTimestamp();
  try{await channel.send({embeds:[embed],allowedMentions:{parse:[]}});}catch{return interaction.editReply('Your vouch could not be posted. Please contact staff.');}
  return interaction.editReply('Your vouch has been posted in <#'+CHANNEL+'>.');
  }
