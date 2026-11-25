@@ -31,6 +31,7 @@ const handler = action => ({
     if (action === 'join' && interaction.user.id !== session.hostId) players.add(interaction.user.id);
     else players.delete(interaction.user.id);
     session.players = [...players];
+    if (!session.fullStartedAt && 1 + session.altAccounts + session.players.length >= 12) session.fullStartedAt = Date.now();
     await saveActiveFarm(client, interaction.guildId, session);
     await interaction.deferUpdate();
     await refreshFarmMessage(client, session);
