@@ -13,7 +13,7 @@ export function timezoneEmbed(now=new Date()){
  const time=new Intl.DateTimeFormat('en-US',{timeZone,hour:'numeric',minute:'2-digit',hour12:true}).format(now);
  return '**'+city+'**\n**'+time+'** '+(hour<8?CHECK:CROSS);
  });
- return new EmbedBuilder().setColor(0xFFFFFF).setDescription('# '+TITLE+' **Auto Timezone Update**\n\n'+CHECK+' **Recommended servers to queue on**\n'+CROSS+' **Servers to avoid**\n\n'+lines.join('\n\n')).setFooter({text:'Auto-updated every hour • Recommended queue window: 12 AM–8 AM local time'}).setTimestamp(now);
+ return new EmbedBuilder().setColor(0xFFFFFF).setDescription('## '+TITLE+' **Auto Timezone Update**\n\n'+CHECK+' **Recommended servers to queue on**\n'+CROSS+' **Servers to avoid**\n\n'+lines.join('\n\n')).setFooter({text:'Auto-updated every hour • Recommended queue window: 12 AM–8 AM local time'}).setTimestamp(now);
 }
 const cooldown=new Map();
 export async function handleTimezoneMessage(message){
