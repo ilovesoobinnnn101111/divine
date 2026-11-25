@@ -1,3 +1,4 @@
+import {earningsText,money} from './boosterEarnings.js';
 import { appendRecord } from './records.js';
 
 const valid=id=>/^\d{17,20}$/.test(String(id||''));
@@ -19,4 +20,4 @@ export async function notifyBooster(client,guildId,{orderId,recipientId,type,mes
  catch(error){console.error('Could not save booster notification delivery history:',error);}
  return attempt;
 }
-export const notificationText=(heading,order,extra='')=>`${heading}\nOrder: ${clean(order.order_id,45)}\nBoost: ${clean(order.hero,120)}\nLevel: ${clean(order.level,100)}\nStatus: ${clean(order.status,50)}${extra?'\n'+clean(extra,500):''}`;
+export const notificationText=(heading,order,extra='')=>`${heading}\nOrder: ${clean(order.order_id,45)}\nBoost: ${clean(order.hero,120)}\nLevel: ${clean(order.level,100)}\nStatus: ${clean(order.status,50)}\nYour earnings: ${earningsText(order)}${extra?'\n'+clean(extra,500):''}`;
