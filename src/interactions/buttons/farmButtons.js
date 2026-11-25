@@ -1,6 +1,6 @@
 import { MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, StringSelectMenuBuilder } from 'discord.js';
 import { farmConfig, memberHasFarmRole } from '../../services/farm/config.js';
-import { getActiveFarm, saveActiveFarm, refreshFarmMessage, earlyReasons } from '../../services/farm/sessionService.js';
+import { getActiveFarm, saveActiveFarm, refreshFarmMessage, earlyReasons, announceFarmStart } from '../../services/farm/sessionService.js';
 
 const handler = action => ({
   name: `farm_${action}`,
@@ -33,6 +33,7 @@ const handler = action => ({
     if (!session.fullStartedAt && 1 + session.altAccounts + session.players.length >= 12) session.fullStartedAt = Date.now();
     await saveActiveFarm(client, interaction.guildId, session);
     await interaction.deferUpdate();
+    if(session.fullStartedAt)await announceFarmStart(client,interaction.guildId,session.messageId);
     await refreshFarmMessage(client, session);
   },
 });
