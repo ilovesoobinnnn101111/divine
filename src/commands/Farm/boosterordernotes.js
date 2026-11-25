@@ -10,7 +10,7 @@ const stamp = value => { const n = Number(value); return Number.isFinite(n) && n
 export default {
   data: new SlashCommandBuilder().setName('boosterordernotes')
     .setDescription('Add or review internal notes on an active booster order (Booster Manager only)')
-    .addStringOption(option => option.setName('order_id').setDescription('Exact active order ID').setRequired(true).setMaxLength(40))
+    .addStringOption(option => option.setName('order_id').setAutocomplete(true).setDescription('Exact active order ID').setRequired(true).setMaxLength(40))
     .addStringOption(option => option.setName('note').setDescription('New internal note (leave blank to view history)').setRequired(false).setMaxLength(500)),
   async execute(interaction, guildConfig, client) {
     if (!interaction.inGuild() || (process.env.TEST_GUILD_ID && interaction.guildId !== process.env.TEST_GUILD_ID))
