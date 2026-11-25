@@ -34,7 +34,16 @@ export async function syncFarmListing(client,guildId,session){
  const payload={embeds:[farmEmbed(session)],components:[new ActionRowBuilder().addComponents(new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel('View Farm').setURL('https://discord.com/channels/'+guildId+'/'+session.channelId+'/'+session.messageId))],allowedMentions:{parse:[]}};
  const old=session.listingId?await channel.messages.fetch(session.listingId).catch(()=>null):null;
  if(old)await old.edit(payload);
- else {const msg=await channel.send(payload);session.listingId=msg.id;await saveActiveFarm(client,guildId,session);}
+ else {
+ await withRecordLock(client,guildId,'activeStorage',async()=>{
+ const rows=await getActiveFarms(client,guildId);
+ const current=rows.find(s=>s.messageId===session.messageId);
+ if(!current||current.listingId!==session.listingId)return;
+ const msg=await channel.send(payload);
+ current.listingId=msg.id;
+ try{await client.db.set(key(guildId),rows);}catch(error){await msg.delete().catch(()=>{});throw error;}
+ });
+ }
 }
 export function farmButtons(session) {
   return [new ActionRowBuilder().addComponents(
@@ -68,6 +77,10 @@ export async function refreshFarmMessage(client, session) {
 
 /** Save a completed session before removing the active session. */
 export async function completeFarm(client, guildId, session, reason = 'COMPLETED') {
+  const removed=await withRecordLock(client,guildId,'activeStorage',async()=>{
+  const rows=await getActiveFarms(client,guildId);
+  const current=rows.find(s=>s.messageId===session.messageId);
+  if(!current)return null;
   await appendRecord(client, guildId, 'completedSessions', {
     id: session.messageId,
     hostId: session.hostId,
@@ -76,9 +89,11 @@ export async function completeFarm(client, guildId, session, reason = 'COMPLETED
     endedAt: Date.now(),
     reason,
   });
-  await withRecordLock(client,guildId,'activeStorage',async()=>{
-   const rows=await getActiveFarms(client,guildId);
    await client.db.set(key(guildId),rows.filter(s=>s.messageId!==session.messageId));
+   return current;
   });
+  if(!removed)return false;
+  session.listingId=removed.listingId;
   if(session.listingId){const channel=await client.channels.fetch(listingChannel).catch(()=>null);if(channel?.guildId===guildId)await channel.messages.delete(session.listingId).catch(()=>{});}
+  return true;
 }
