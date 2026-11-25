@@ -7,8 +7,8 @@ const options = arr => arr.map((name, i) => ({ label: name.slice(0, 100), value:
 const vanguards = ['Angela','Captain America','Deadpool','Devil Dinosaur','Doctor Strange','Emma Frost','Groot','Hulk','Magneto','Peni Parker','Rogue','The Thing','Thor','Venom'];
 const strategists = ['Adam Warlock','Cloak & Dagger','Deadpool','Gambit','Invisible Woman','Jeff the Land Shark','Loki','Luna Snow','Mantis','Rocket Raccoon','Ultron','White Fox'];
 const damage = heroes.filter(name=>!vanguards.includes(name)&&!strategists.includes(name)||name==='Deadpool');
-const groups = [vanguards,damage.slice(0,25),damage.slice(25),strategists].filter(g=>g.length);
-const groupLabels = ['Vanguard','Duelist (Damage) · 1','Duelist (Damage) · 2','Strategist'];
+const groups = [vanguards,damage,strategists];
+const groupLabels = ['Vanguard','Duelist (Damage)','Strategist'];
 
 function view(state, nonce) {
   const { group, hero, start, end, items } = state;
@@ -36,7 +36,9 @@ function view(state, nonce) {
       .addOptions(opts.map(x => ({ ...x, default: x.value === String(selected) })))
   );
   const groupOptions = groupLabels.map((label, i) => ({ label, value: String(i) }));
-  const heroOptions = groups[group].map(name => ({ label: name, value: String(heroes.indexOf(name)) }));
+  const page = state.page || 0;
+  const heroOptions = groups[group].slice(page*24,page*24+24).map(name => ({ label: name, value: String(heroes.indexOf(name)) }));
+  if(groups[group].length>24) heroOptions.push({label:page?'← Previous characters':'More characters →',value:'page'});
   const levelOptions = tiers.map(([name, price], i) => ({ label: `${name} — ${money(hero === null ? price : boostPrice(heroes[hero], 0, i))}`, value: String(i) }));
   const rows = [
     select('group','Select character role',groupOptions,group),
@@ -72,16 +74,16 @@ export default {
       try {
         const action = i.customId.split(':')[0];
         if (action === 'lordcalc_group') {
-          state.group = Number(i.values[0]);
+          state.group = Number(i.values[0]); state.page=0;
           state.hero = null;
         } else if (action === 'lordcalc_hero') {
-          state.hero = Number(i.values[0]);
+          if(i.values[0]==='page'){state.page=state.page?0:1;state.hero=null;}else state.hero = Number(i.values[0]);
         } else if (action === 'lordcalc_start') {
           state.start = Number(i.values[0]);
         } else if (action === 'lordcalc_end') {
           state.end = Number(i.values[0]);
         } else if (action === 'lordcalc_reset') {
-          state.items = []; state.hero = null; state.start = 0; state.end = 4; state.group = 0;
+          state.items = []; state.hero = null; state.start = 0; state.end = 4; state.group = 0; state.page=0;
         } else if (action === 'lordcalc_add') {
           if (state.hero === null || state.end <= state.start)
             return i.reply({ content: 'Choose a character and a desired level above its current level.', flags: MessageFlags.Ephemeral });
