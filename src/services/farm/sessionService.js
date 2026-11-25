@@ -67,10 +67,10 @@ export function farmEmbed(session) {
  const remaining=Math.max(0,Math.ceil((duration*60000-elapsed)/60000));
  const type=session.type==='HYBRID'?'Hybrid':session.type==='REGULAR'?'Regular':session.type;
  const slots=farmSlots(session);
- const sparkle='<a:001_sparkles:1570367767700316261>';
- const arrow='<:UtilityArrow:1570348660523278426>';
- const white='<:gwhitearrow:1543625431713058919>';
- const branch='<:x_whitearrow:1557670125312807012>';
+ const sparkle='<a:001_sparkles:1575070315724279918>';
+ const arrow='<:UtilityArrow:1575069345321582662>';
+ const white='<:gwhitearrow:1575129688190226475>';
+ const branch='<:x_whitearrow:1575129831988002968>';
  const cross='<:w_xno:1575126942011760642>';
  const status=session.completed?'COMPLETED':start?'ACTIVE':'WAITING';
  const end=start?Math.floor((start+duration*60000)/1000):null;
