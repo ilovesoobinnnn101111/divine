@@ -37,17 +37,17 @@ export function farmEmbed(session) {
   const elapsed = start ? Math.max(0, Date.now() - start) : 0;
   const progress = Math.min(100, elapsed / (duration * 60000) * 100);
   const filled = Math.floor(progress / 10);
-  const status = start ? 'In Progress' : 'Waiting for Players';
+  const status = session.completed ? 'Completed' : start ? 'In Progress' : 'Waiting for Players';
   return new EmbedBuilder().setColor(0xF5A9D0)
     .setTitle((session.type === 'REGULAR' ? 'Regular' : session.type === 'HYBRID' ? 'Hybrid' : session.type) + ' Farm Session')
-    .setDescription('**Progress**\n**'+progress.toFixed(1)+'%**\n`'+'█'.repeat(filled)+'░'.repeat(10-filled)+'`\n\n**⏱ Time Remaining**\n'+(start ? '<t:'+Math.floor((start+duration*60000)/1000)+':R>' : duration+' minutes (starts when full)')+'\n\n**♛ Host**\n<@'+session.hostId+'>\n\n**Status**\n'+status+'\n\n**Players**\n'+farmSlots(session)+'/12\n'+(session.players.length ? session.players.map(id=>'<@'+id+'>').join(', ') : 'No players yet')+'\n\n**Alt Accounts**\nHost has '+session.altAccounts+' alt account(s) in the farm.')
+    .setDescription('**Progress**\n**'+progress.toFixed(1)+'%**\n`'+'█'.repeat(filled)+'░'.repeat(10-filled)+'`\n\n**⏱ Time Remaining**\n'+(session.completed ? 'Complete' : start ? '<t:'+Math.floor((start+duration*60000)/1000)+':R>' : duration+' minutes (starts when full)')+'\n\n**♛ Host**\n<@'+session.hostId+'>\n\n**Status**\n'+status+'\n\n**Players**\n'+farmSlots(session)+'/12\n'+(session.players.length ? session.players.map(id=>'<@'+id+'>').join(', ') : 'No players yet')+'\n\n**Alt Accounts**\nHost has '+session.altAccounts+' alt account(s) in the farm.')
     .setFooter({text: 'Farm session • '+duration+' minutes'}).setTimestamp();
 }
 
 export async function refreshFarmMessage(client, session) {
   const channel = await client.channels.fetch(session.channelId).catch(() => null);
   const message = await channel?.messages.fetch(session.messageId).catch(() => null);
-  if (message) await message.edit({ embeds: [farmEmbed(session)], components: farmButtons(session) });
+  if (message) await message.edit({ embeds: [farmEmbed(session)], components: session.completed ? [] : farmButtons(session) });
 }
 
 /** Save a completed session before removing the active session. */
