@@ -1,3 +1,4 @@
+import {earningsText} from './boosterEarnings.js';
 import { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { readRecords } from './records.js';
 import { availabilityRows, availabilityOf, availabilityIcon } from './boosterAvailability.js';
@@ -41,6 +42,7 @@ export async function renderBoosterDashboard(client,guildId,view='active',select
    `**Customer:** ${/^\d{17,20}$/.test(String(selected.customer_id||''))?mention(selected.customer_id):safeRequest(selected.customer||'Not specified',80)}`,
    `**Boost:** ${safeRequest(selected.hero||'Not specified',120)}`,
    `**Level:** ${safeRequest(selected.level||'Not specified',120)}`,
+   `**Booster earnings:** ${earningsText(selected)}`,
    `**Deadline:** ${due?`<t:${Math.floor(due/1000)}:F>${due<now?' ⚠️ Overdue':''}`:'Not set'}`
   ].join('\n').slice(0,1024),inline:false});
  }else embed.addFields({name:'🔎 Selected Order',value:'No orders in this view.',inline:false});
