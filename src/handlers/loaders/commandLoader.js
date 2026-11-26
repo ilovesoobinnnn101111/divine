@@ -281,7 +281,7 @@ async function registerGlobalCommands(client, clientId, commands, totalSubcomman
   command.name === 'orderstatus' ||
   command.name === 'orderupdate' ||
   command.name === 'orderassignment' ||
-  command.name === 'watcher-setup' || command.name === 'watcher-panel' ||
+  command.name === 'altcheck' || command.name === 'watcher-setup' || command.name === 'watcher-panel' ||
   command.name === 'watcher-report' ||
   command.name === 'trainerhours' ||
   command.name === 'trainerratings' ||
