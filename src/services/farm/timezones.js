@@ -15,6 +15,21 @@ export function timezoneEmbed(now=new Date()){
  });
  return new EmbedBuilder().setColor(0xFFFFFF).setDescription('## '+TITLE+' **Auto Timezone Update**\n\n'+CHECK+' **Recommended servers to queue on**\n'+CROSS+' **Servers to avoid**\n\n'+lines.join('\n\n')).setFooter({text:'Auto-updated every hour • Recommended queue window: 12 AM–8 AM local time'}).setTimestamp(now);
 }
+export function manualTimezoneEmbed(now=new Date()){
+ const arrow='<:x_whitearrow:1575129831988002968>';
+ const sparkle='<:white_sparkle:1575071348173316216>';
+ const check='<:1CL_checkwhite:1575465471015260190>';
+ const cross='<:1CL_crosswhite:1575465528472903700>';
+ const ordered=[1,3,5,4,2,0];
+ const lines=ordered.map((index,i)=>{
+ const [label,timeZone]=zones[index];
+ const city=label.split(' ').slice(1).join(' ');
+ const hour=Number(new Intl.DateTimeFormat('en-GB',{timeZone,hour:'2-digit',hourCycle:'h23'}).format(now));
+ const time=new Intl.DateTimeFormat('en-US',{timeZone,hour:'2-digit',minute:'2-digit',hour12:true}).format(now);
+ return (i%2===0?sparkle:arrow)+' **'+city+':** '+time+' '+(hour<7?check:cross);
+ });
+ return new EmbedBuilder().setColor(0xFFFFFF).setDescription('## <a:awhitestars:1575465312005136539> Global Time Zone\nCurrent local times for popular farming regions\n\n'+arrow+' **Current Local Times**\n'+lines.join('\n')+'\n\n<:gwhitefly:1573946548956569737> **Time Status**\n'+arrow+' '+check+' **Check:** Midnight to 7 AM (Prime farming hours)\n'+sparkle+' '+cross+' **X:** Outside prime farming hours').setFooter({text:'Use /timein to check current global times'}).setTimestamp(now);
+}
 const cooldown=new Map();
 export async function handleTimezoneMessage(message){
  if(message.content.trim().toLowerCase()!=='!timezone'||message.guild.id!==guildId())return false;
@@ -22,7 +37,7 @@ export async function handleTimezoneMessage(message){
  const now=Date.now();
  if(now-(cooldown.get(message.author.id)||0)<15000)return true;
  cooldown.set(message.author.id,now);
- await message.channel.send({embeds:[timezoneEmbed()],allowedMentions:{parse:[]}});
+ await message.channel.send({embeds:[manualTimezoneEmbed()],allowedMentions:{parse:[]}});
  return true;
 }
 let started=false;
