@@ -238,7 +238,7 @@ function prepareCommandsForRegistration(commands) {
 
 async function registerGlobalCommands(client, clientId, commands, totalSubcommands) {
     const testGuildId = process.env.TEST_GUILD_ID?.trim();
-    const farmCommands = commands.filter(command => command.name === 'vouch' || command.name === 'boosterhelp' || command.name === 'promoterhelp' || command.name === 'boosterearnings' || command.name === 'boosterpayment' || command.name === 'cancelboostrequest' ||
+    const farmCommands = commands.filter(command => client.commands.get(command.name)?.registrationScope === 'guild' || command.name === 'vouch' || command.name === 'boosterhelp' || command.name === 'promoterhelp' || command.name === 'boosterearnings' || command.name === 'boosterpayment' || command.name === 'cancelboostrequest' ||
   command.name === 'myboostrequests' ||
   command.name === 'rankboostcalculator' ||
   command.name === 'lordboostcalculator' ||
@@ -310,6 +310,7 @@ async function registerGlobalCommands(client, clientId, commands, totalSubcomman
 
         if (!farmCommands.some(command => command.name === 'startfarm')) throw new Error('Farm command startfarm was not loaded');
         validateCommands(farmCommands);
+        if (farmCommands.length > MAX_COMMANDS) throw new Error('Test guild command limit exceeded; registration aborted');
         logger.info(`Registering ${farmCommands.length} farm commands in test guild ${testGuildId}`);
         const registered = await client.rest.put(`/applications/${clientId}/guilds/${testGuildId}/commands`, { body: farmCommands });
         for(const name of ['altcheck','altlogs','altwhitelist','altstats','altsettings']) console.log('[command registration] guild='+testGuildId+' application='+clientId+' '+name+' loaded='+client.commands.has(name)+' requested='+farmCommands.some(c=>c.name===name)+' registered='+registered.some(c=>c.name===name));
@@ -336,6 +337,7 @@ async function registerGlobalCommands(client, clientId, commands, totalSubcomman
     const preserved = existing.filter(c => c.type !== 1 || !farmNames.has(c.name)).map(({id,application_id,guild_id,version,...c})=>c);
     const combined = [...preserved,...farmCommands];
     if (combined.filter(c => (c.type || 1) === 1).length > MAX_COMMANDS) throw new Error('Guild command limit exceeded; existing commands preserved');
+    logger.info(`Command capacity: global ${globalCommands.length}/${MAX_COMMANDS}; production guild ${combined.filter(c => (c.type || 1) === 1).length}/${MAX_COMMANDS}`);
     await client.rest.put(guildRoute,{body:combined});
     logger.info(`Registered ${farmCommands.length} farm commands in production guild ${guildId}`);
     commands = globalCommands;
