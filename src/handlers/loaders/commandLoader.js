@@ -311,7 +311,8 @@ async function registerGlobalCommands(client, clientId, commands, totalSubcomman
         if (!farmCommands.some(command => command.name === 'startfarm')) throw new Error('Farm command startfarm was not loaded');
         validateCommands(farmCommands);
         logger.info(`Registering ${farmCommands.length} farm commands in test guild ${testGuildId}`);
-        await client.rest.put(`/applications/${clientId}/guilds/${testGuildId}/commands`, { body: farmCommands });
+        const registered = await client.rest.put(`/applications/${clientId}/guilds/${testGuildId}/commands`, { body: farmCommands });
+        console.log('[command registration] guild='+testGuildId+' application='+clientId+' altcheck loaded='+client.commands.has('altcheck')+' requested='+farmCommands.some(c=>c.name==='altcheck')+' registered='+registered.some(c=>c.name==='altcheck'));
         logger.info(`Successfully registered ${farmCommands.length} farm test guild commands`);
         return;
     }
