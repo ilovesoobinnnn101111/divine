@@ -25,10 +25,11 @@ function panels(s){
 export async function beginSetup(i,c){
  if(!allowed(i)||!host(i))return privateReply(i,'Host or Host Manager role required.');
  if(!c.db?.isAvailable?.())return privateReply(i,'Database unavailable.');
- const co=i.options.getUser('cohost');if(co&&(co.bot||co.id===i.user.id||!await i.guild.members.fetch(co.id).catch(()=>null)))return privateReply(i,'Select another current human member.');
+ await i.deferReply({flags:MessageFlags.Ephemeral});
+ const co=i.options.getUser('cohost');if(co&&(co.bot||co.id===i.user.id||!await i.guild.members.fetch(co.id).catch(()=>null)))return i.editReply('Select another current human member.');
  const s={id:i.id,owner:i.user.id,cohost:co?.id||null,channel:i.channelId,created:Date.now(),slots:Array(12).fill(null),priority:0,messages:[]};
  await c.db.set(key(i.guildId,s.id),s);
- return i.reply({flags:MessageFlags.Ephemeral,content:'Choose a voice channel.',components:[row(new ChannelSelectMenuBuilder().setCustomId(prefix(s,'vc')).setChannelTypes(ChannelType.GuildVoice))]});
+ return i.editReply({content:'Choose a voice channel.',components:[row(new ChannelSelectMenuBuilder().setCustomId(prefix(s,'vc')).setChannelTypes(ChannelType.GuildVoice))]});
 }
 async function refresh(i,s){const ch=await i.guild.channels.fetch(s.channel);const p=panels(s);if(s.closed)for(const panel of p){panel.components=[];panel.embeds[0].setFooter({text:'Farm closed'});}await Promise.all(s.messages.map(async(id,j)=>(await ch.messages.fetch(id)).edit({...p[j],allowedMentions:{parse:[]}})));}
 function modal(s,a,title,fields){return new ModalBuilder().setCustomId(prefix(s,a)).setTitle(title).addComponents(...fields.map(([id,label,max])=>row(new TextInputBuilder().setCustomId(id).setLabel(label).setStyle(TextInputStyle.Short).setMaxLength(max).setRequired(true))));}
@@ -44,7 +45,7 @@ export async function handleCustomSetup(i,c){
  if(s.messages.length!==3)return privateReply(i,'Setup is incomplete.');
  if(a==='rolepick'){
  const role=i.values[0];if(!roles.includes(role))return privateReply(i,'Invalid role.');
- return i.update({content:'Choose your hero.',components:Array.from({length:Math.ceil(heroRoster[role].length/25)},(_,page)=>row(new StringSelectMenuBuilder().setCustomId(prefix(s,'heropick:'+role+':'+page)).setPlaceholder('Select hero'+(heroRoster[role].length>25?' — list '+(page+1):'')).addOptions(heroRoster[role].slice(page*25,page*25+25).map(h=>({label:h,value:h}))))});
+ return i.update({content:'Choose your hero.',components:Array.from({length:Math.ceil(heroRoster[role].length/25)},(_,page)=>row(new StringSelectMenuBuilder().setCustomId(prefix(s,'heropick:'+role+':'+page)).setPlaceholder('Select hero'+(heroRoster[role].length>25?' — list '+(page+1):'')).addOptions(heroRoster[role].slice(page*25,page*25+25).map(h=>({label:h,value:h})))))});
  }
  if(a==='heropick'){
  const role=n,hero=resolveHero(role,i.values[0]);if(!hero)return privateReply(i,'Invalid hero.');
