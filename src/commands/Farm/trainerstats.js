@@ -4,7 +4,7 @@ import { readRecords } from '../../services/farm/records.js';
 const WEEK = 7 * 24 * 60 * 60 * 1000;
 export default {
   data: new SlashCommandBuilder().setName('trainerstats')
-    .setDescription('View a Host Trainer’s rating statistics')
+    .setDescription('View trainer ratings, hours and completed evaluations')
     .addUserOption(o => o.setName('trainer').setDescription('Trainer to look up (defaults to you)').setRequired(false)),
   async execute(interaction, guildConfig, client) {
     if (!interaction.inGuild() || (process.env.TEST_GUILD_ID && interaction.guildId !== process.env.TEST_GUILD_ID)) {
@@ -22,7 +22,7 @@ export default {
     const lastReset = Math.max(0, ...resets.map(r => Number(r.timestamp) || 0));
     const weekly = ratings.filter(r => Number(r.timestamp) > Math.max(Date.now() - WEEK, lastReset));
     const sessions = trainerLogs.filter(r => r?.trainerId === user.id);
-    const embed = new EmbedBuilder().setColor(0x9B59B6)
+    const embed = new EmbedBuilder().setColor(0xFFFFFF)
       .setTitle(`🎓 Trainer Stats - ${user.username}`)
       .setThumbnail(user.displayAvatarURL()).setTimestamp();
     if (!ratings.length && !sessions.length) {
@@ -49,6 +49,9 @@ export default {
       embed.addFields({ name: '📝 Recent Rating IDs & Reviews', value: lines.join('\n\n').slice(0,1024), inline: false });
     }
     if (sessions.length) {
+      const reports = sessions.filter(r => r.type === 'watcher');
+      const trainees = new Set(reports.map(r => r.trialHostId).filter(Boolean));
+      embed.addFields({name:'<:gs_white_butterfly:1573946745577279608> Training Evaluations',value:`Completed reports: ${reports.length}\nUnique trainees: ${trainees.size}\nHybrid: ${reports.filter(r=>r.farmType==='Hybrid').length}\n222: ${reports.filter(r=>['222','2-2-2'].includes(r.farmType)).length}`});
       const minutes = sessions.reduce((s,r) => s + (Number(r.minutes) || 0), 0);
       const recentMinutes = sessions.filter(r => Number(r.date) > Date.now() - WEEK).reduce((s,r) => s + (Number(r.minutes) || 0), 0);
       embed.addFields({ name: '⏱️ Trainer Hours', value: `Past 7 days: ${recentMinutes} min (${(recentMinutes/60).toFixed(1)}h)\nAll-time: ${minutes} min (${(minutes/60).toFixed(1)}h)\nSessions: ${sessions.length}` });
