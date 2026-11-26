@@ -6,6 +6,7 @@ import { formatWelcomeMessage } from '../utils/welcome.js';
 import { logEvent, EVENT_TYPES } from '../services/loggingService.js';
 import { getServerCounters, updateCounter } from '../services/serverstatsService.js';
 import { setBirthday as dbSetBirthday } from '../utils/database.js';
+import { farmConfig } from '../services/farm/config.js';
 import { appendRecord, readRecords } from '../services/farm/records.js';
 import { logger } from '../utils/logger.js';
 
@@ -231,12 +232,14 @@ async function screenJoin(member) {
     else if(age<30){score+=15;reasons.push('Account younger than 30 days');}
     if(!member.user.avatar){score+=10;reasons.push('Default profile picture');}
     if(joins.length>=5){score+=25;reasons.push('At least 5 joins within 60 seconds');}
-    if(score<30)return;
+    let settings={enabled:true,moderate:30,high:60};
+    if(member.client.db?.isAvailable?.())settings={...settings,...await member.client.db.get(farmConfig.databasePrefix+member.guild.id+':altSettings',{}).catch(()=>({}))};
+    if(!settings.enabled||score<settings.moderate)return;
     if(member.client.db?.isAvailable?.()){
         const exemptions=await readRecords(member.client,member.guild.id,'altWhitelist').catch(error=>{logger.warn('Whitelist lookup failed:',error);return [];});
         if(exemptions.some(r=>r.memberId===member.id))return;
     }
-    const level=score>=60?'High':'Moderate';
+    const level=score>=settings.high?'High':'Moderate';
     const arrow='<:x_whitearrow:1575129831988002968>', sparkle='<a:001_sparkles:1575070315724279918>', cat='<:qw_pwhitekat:1575470985405010022>';
     const channel=await member.guild.channels.fetch('1571956074008027137').catch(()=>null);
     if(!channel?.isSendable())throw new Error('Screening alert channel unavailable');
