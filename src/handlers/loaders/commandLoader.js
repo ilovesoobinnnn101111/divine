@@ -238,9 +238,9 @@ function prepareCommandsForRegistration(commands) {
 
 async function registerGlobalCommands(client, clientId, commands, totalSubcommands) {
     const testGuildId = process.env.TEST_GUILD_ID?.trim();
-    const retiredAltNames = new Set(['altcheck','altlogs','altstats','altsettings','altwhitelist','boosterweekly','boostermonthly','rankboostcalculator','lordboostcalculator','watcher-setup','watcher-panel','watcher-report']);
-    if (!['alt','boostcalculator','watcher'].every(name=>commands.some(c=>c.name===name))) throw new Error('Consolidated alt command missing; registration aborted');
-    commands = commands.filter(c=>!retiredAltNames.has(c.name));
+    const retiredCommandNames = new Set(['altcheck','altlogs','altstats','altsettings','altwhitelist','boosterweekly','boostermonthly','rankboostcalculator','lordboostcalculator','watcher-setup','watcher-panel','watcher-report']);
+    if (!['alt','boostcalculator','watcher','boosterreport'].every(name=>commands.some(c=>c.name===name))) throw new Error('Consolidated command missing; registration aborted');
+    commands = commands.filter(c=>!retiredCommandNames.has(c.name));
     const farmCommands = commands.filter(command => client.commands.get(command.name)?.registrationScope === 'guild' || command.name === 'vouch' || command.name === 'boosterhelp' || command.name === 'promoterhelp' || command.name === 'boosterearnings' || command.name === 'boosterpayment' || command.name === 'cancelboostrequest' ||
   command.name === 'myboostrequests' ||
   command.name === 'rankboostcalculator' ||
@@ -316,7 +316,8 @@ async function registerGlobalCommands(client, clientId, commands, totalSubcomman
         if (farmCommands.length > MAX_COMMANDS) throw new Error('Test guild command limit exceeded; registration aborted');
         logger.info(`Registering ${farmCommands.length} farm commands in test guild ${testGuildId}`);
         const registered = await client.rest.put(`/applications/${clientId}/guilds/${testGuildId}/commands`, { body: farmCommands });
-        for(const name of ['alt']) console.log('[command registration] guild='+testGuildId+' application='+clientId+' '+name+' loaded='+client.commands.has(name)+' requested='+farmCommands.some(c=>c.name===name)+' registered='+registered.some(c=>c.name===name));
+        console.log('[command capacity] test guild slash commands='+registered.filter(c=>(c.type||1)===1).length+'/'+MAX_COMMANDS+' retired remaining='+registered.filter(c=>retiredCommandNames.has(c.name)).length);
+        for(const name of ['alt','boosterreport','boostcalculator','watcher']) console.log('[command registration] guild='+testGuildId+' application='+clientId+' '+name+' loaded='+client.commands.has(name)+' requested='+farmCommands.some(c=>c.name===name)+' registered='+registered.some(c=>c.name===name));
         logger.info(`Successfully registered ${farmCommands.length} farm test guild commands`);
         return;
     }
@@ -337,11 +338,13 @@ async function registerGlobalCommands(client, clientId, commands, totalSubcomman
     if (globalCommands.length > MAX_COMMANDS || farmCommands.length > MAX_COMMANDS) throw new Error('Command limit exceeded; registration aborted without truncation');
     const guildRoute = `/applications/${clientId}/guilds/${guildId}/commands`;
     const existing = await client.rest.get(guildRoute);
-    const preserved = existing.filter(c => c.type !== 1 || (!farmNames.has(c.name) && !retiredAltNames.has(c.name))).map(({id,application_id,guild_id,version,...c})=>c);
+    const preserved = existing.filter(c => c.type !== 1 || (!farmNames.has(c.name) && !retiredCommandNames.has(c.name))).map(({id,application_id,guild_id,version,...c})=>c);
     const combined = [...preserved,...farmCommands];
     if (combined.filter(c => (c.type || 1) === 1).length > MAX_COMMANDS) throw new Error('Guild command limit exceeded; existing commands preserved');
     logger.info(`Command capacity: global ${globalCommands.length}/${MAX_COMMANDS}; production guild ${combined.filter(c => (c.type || 1) === 1).length}/${MAX_COMMANDS}`);
-    await client.rest.put(guildRoute,{body:combined});
+    const registeredGuild = await client.rest.put(guildRoute,{body:combined});
+    console.log('[command capacity] production guild slash commands='+registeredGuild.filter(c=>(c.type||1)===1).length+'/'+MAX_COMMANDS+' retired remaining='+registeredGuild.filter(c=>retiredCommandNames.has(c.name)).length);
+    for(const name of ['alt','boosterreport','boostcalculator','watcher']) console.log('[command registration] '+name+' registered='+registeredGuild.some(c=>c.name===name));
     logger.info(`Registered ${farmCommands.length} farm commands in production guild ${guildId}`);
     commands = globalCommands;
     logger.info(`Preparing to register ${commands.length} commands globally`);
