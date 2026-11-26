@@ -12,6 +12,7 @@ export async function handleTrainerLauncher(i,client){
  const s=selections.get(key);
  if(action==='host'||['rules','dc','grief'].includes(action)){
  if(!s||s.expires<Date.now()||i.customId.split(':')[2]!==s.token)return i.reply({content:'Evaluation expired. Start again.',flags:MessageFlags.Ephemeral});
+ if(s.preview||s.submitting)return i.reply({content:'Finish or edit your current preview first.',flags:MessageFlags.Ephemeral});
  if(action==='host')s.host=i.values[0];else s[action]=i.values[0];
  return i.update(evaluation(s));
  }
@@ -21,22 +22,36 @@ export async function handleTrainerLauncher(i,client){
  }
  if(i.isButton()){
  if(!s||s.expires<Date.now())return i.reply({content:'Select a farm type first.',flags:MessageFlags.Ephemeral});
+ if(action==='confirm'||action==='cancel'||action==='edit'){
+ if(i.customId.split(':')[2]!==s.token||s.submitting||!s.preview)return i.reply({content:'This preview is no longer active.',flags:MessageFlags.Ephemeral});
+ if(action==='cancel'){selections.delete(key);return i.update({content:'Evaluation cancelled.',embeds:[],components:[]});}
+ if(action==='edit'){s.preview=null;s.token=i.id;return i.update(evaluation(s));}
+ s.submitting=true;
+ const {target,proof,minutes,fullNotes,type}=s.preview;
+ const options={getUser:()=>target.user,getAttachment:()=>proof,getInteger:()=>minutes,getString:n=>n==='farm_type'?type:fullNotes};
+ const adapter=new Proxy(i,{get(t,p){if(p==='options')return options;const v=Reflect.get(t,p,t);return typeof v==='function'?v.bind(t):v;}});
+ try{return await report.execute(adapter,null,client);}finally{if(selections.get(key)===s)selections.delete(key);}
+ }
  if(action==='next')return i.reply({...evaluation(s),flags:MessageFlags.Ephemeral});
- if(action!=='details'||i.customId.split(':')[2]!==s.token||!s.host||!s.rules||!s.dc||!s.grief)return i.reply({content:'Complete every verification field first.',flags:MessageFlags.Ephemeral});
+ if(s.preview||s.submitting||action!=='details'||i.customId.split(':')[2]!==s.token||!s.host||!s.rules||!s.dc||!s.grief)return i.reply({content:'Complete every verification field first.',flags:MessageFlags.Ephemeral});
  const field=(id,label,style=TextInputStyle.Short)=>new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId(id).setLabel(label).setStyle(style).setRequired(true));
  const modal=new ModalBuilder().setCustomId('trainer_launch:form:'+s.token).setTitle('Watcher Trial Evaluation').addComponents(field('minutes','Training time (minutes)'),field('notes','Evaluation notes',TextInputStyle.Paragraph)).addLabelComponents(new LabelBuilder().setLabel('Scoreboard screenshot').setFileUploadComponent(new FileUploadBuilder().setCustomId('proof').setRequired(true).setMinValues(1).setMaxValues(1)));
  return i.showModal(modal);
  }
  if(i.isModalSubmit()){
  if(!s||s.expires<Date.now()||i.customId.split(':')[2]!==s.token)return i.reply({content:'Evaluation expired. Start again.',flags:MessageFlags.Ephemeral});
+ if(s.preview||s.submitting)return i.reply({content:'A preview is already active.',flags:MessageFlags.Ephemeral});
  const type=s.type,host=s.host,minutes=Number(i.fields.getTextInputValue('minutes')),notes=i.fields.getTextInputValue('notes').trim(),checks=[s.rules,s.dc,s.grief];
  if(!['222','Hybrid'].includes(type)||!/^\d{17,20}$/.test(host)||!Number.isInteger(minutes)||minutes<1||minutes>240||notes.length<10||notes.length>850||checks.length!==3||checks.some(x=>!['yes','no'].includes(x)))return i.reply({content:'Invalid evaluation. Enter 1–240 minutes and 10–850 characters of notes.',flags:MessageFlags.Ephemeral});
  const target=await i.guild.members.fetch(host).catch(()=>null),proof=i.fields.getUploadedFiles('proof')?.first();
  if(!target||!proof)return i.reply({content:'Trial host or screenshot missing.',flags:MessageFlags.Ephemeral});
  const fullNotes='Rules explained: '+checks[0]+' | Disconnect: '+checks[1]+' | Griefing/Trolling: '+checks[2]+'\n'+notes;
- const options={getUser:()=>target.user,getAttachment:()=>proof,getInteger:()=>minutes,getString:n=>n==='farm_type'?type:fullNotes};
- const adapter=new Proxy(i,{get(t,p){if(p==='options')return options;const v=Reflect.get(t,p,t);return typeof v==='function'?v.bind(t):v;}});
- selections.delete(key);return report.execute(adapter,null,client);
+ if(!['image/png','image/jpeg','image/webp','image/gif'].includes(proof.contentType?.split(';')[0]))return i.reply({content:'Upload a PNG, JPEG, WebP or GIF screenshot.',flags:MessageFlags.Ephemeral});
+ if(s.preview||s.submitting||selections.get(key)!==s)return i.reply({content:'This evaluation is no longer active.',flags:MessageFlags.Ephemeral});
+ s.preview={target,proof,minutes,fullNotes,type};s.expires=Date.now()+900000;
+ const embed=new EmbedBuilder().setColor(0xFFFFFF).setTitle('Watcher Report Preview').setDescription('**Trial Host:** <@'+host+'>\n**Farm Type:** '+type+'\n**Training Time:** '+minutes+' minutes\n**Rules Said:** '+checks[0]+'\n**Disconnect:** '+checks[1]+'\n**Griefing/Trolling:** '+checks[2]).addFields({name:'Evaluation Notes',value:notes}).setImage(proof.url);
+ const buttons=new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('trainer_launch:confirm:'+s.token).setLabel('Submit Report').setStyle(ButtonStyle.Success),new ButtonBuilder().setCustomId('trainer_launch:edit:'+s.token).setLabel('Edit Report').setStyle(ButtonStyle.Secondary),new ButtonBuilder().setCustomId('trainer_launch:cancel:'+s.token).setLabel('Cancel').setStyle(ButtonStyle.Danger));
+ return i.reply({embeds:[embed],components:[buttons],allowedMentions:{parse:[]},flags:MessageFlags.Ephemeral});
  }
 }
 
