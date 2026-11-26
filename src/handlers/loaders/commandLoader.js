@@ -238,8 +238,8 @@ function prepareCommandsForRegistration(commands) {
 
 async function registerGlobalCommands(client, clientId, commands, totalSubcommands) {
     const testGuildId = process.env.TEST_GUILD_ID?.trim();
-    const retiredAltNames = new Set(['altcheck','altlogs','altstats','altsettings','altwhitelist','boosterweekly','boostermonthly']);
-    if (!commands.some(c=>c.name==='alt')) throw new Error('Consolidated alt command missing; registration aborted');
+    const retiredAltNames = new Set(['altcheck','altlogs','altstats','altsettings','altwhitelist','boosterweekly','boostermonthly','rankboostcalculator','lordboostcalculator']);
+    if (!['alt','boostcalculator'].every(name=>commands.some(c=>c.name===name))) throw new Error('Consolidated alt command missing; registration aborted');
     commands = commands.filter(c=>!retiredAltNames.has(c.name));
     const farmCommands = commands.filter(command => client.commands.get(command.name)?.registrationScope === 'guild' || command.name === 'vouch' || command.name === 'boosterhelp' || command.name === 'promoterhelp' || command.name === 'boosterearnings' || command.name === 'boosterpayment' || command.name === 'cancelboostrequest' ||
   command.name === 'myboostrequests' ||
