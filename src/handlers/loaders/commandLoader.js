@@ -281,7 +281,7 @@ async function registerGlobalCommands(client, clientId, commands, totalSubcomman
   command.name === 'orderstatus' ||
   command.name === 'orderupdate' ||
   command.name === 'orderassignment' ||
-  command.name === 'altstats' || command.name === 'altwhitelist' || command.name === 'altlogs' || command.name === 'altcheck' || command.name === 'watcher-setup' || command.name === 'watcher-panel' ||
+  command.name === 'altsettings' || command.name === 'altstats' || command.name === 'altwhitelist' || command.name === 'altlogs' || command.name === 'altcheck' || command.name === 'watcher-setup' || command.name === 'watcher-panel' ||
   command.name === 'watcher-report' ||
   command.name === 'trainerhours' ||
   command.name === 'trainerratings' ||
@@ -312,7 +312,7 @@ async function registerGlobalCommands(client, clientId, commands, totalSubcomman
         validateCommands(farmCommands);
         logger.info(`Registering ${farmCommands.length} farm commands in test guild ${testGuildId}`);
         const registered = await client.rest.put(`/applications/${clientId}/guilds/${testGuildId}/commands`, { body: farmCommands });
-        for(const name of ['altcheck','altlogs','altwhitelist','altstats']) console.log('[command registration] guild='+testGuildId+' application='+clientId+' '+name+' loaded='+client.commands.has(name)+' requested='+farmCommands.some(c=>c.name===name)+' registered='+registered.some(c=>c.name===name));
+        for(const name of ['altcheck','altlogs','altwhitelist','altstats','altsettings']) console.log('[command registration] guild='+testGuildId+' application='+clientId+' '+name+' loaded='+client.commands.has(name)+' requested='+farmCommands.some(c=>c.name===name)+' registered='+registered.some(c=>c.name===name));
         logger.info(`Successfully registered ${farmCommands.length} farm test guild commands`);
         return;
     }
