@@ -13,7 +13,7 @@ export default {
  const embed=new EmbedBuilder().setColor(0xFFFFFF).setDescription('## '+sparkle+' Account Screening History\n'+(user?'Member: <@'+user.id+'>\n':'')+'**Total alerts:** '+records.length).setFooter({text:'Page '+page+'/'+pages+' • Indicators only, not proof of alt ownership'}).setTimestamp();
  for(const r of records.slice((page-1)*size,page*size)){
  const reasons=Array.isArray(r.reasons)?r.reasons.map(x=>arrow+' '+String(x)).join('\n'):'No recorded indicators';
- embed.addFields({name:arrow+' '+String(r.level)+' — '+String(r.score)+' points',value:('<@'+r.memberId+'>\n<t:'+Math.floor(Number(r.timestamp)/1000)+':f>\n'+reasons).slice(0,1024)});
+ embed.addFields({name:arrow+' '+String(r.level)+' — '+String(r.score)+' points',value:('<@'+r.memberId+'>\n<t:'+Math.floor(Number(r.timestamp)/1000)+':f>\n'+reasons+'\n'+arrow+' Review: '+(r.review?r.review.status+' by <@'+r.review.reviewerId+'>':'Pending')).slice(0,1024)});
  }
  if(!records.length)embed.addFields({name:arrow+' History',value:'No screening alerts found.'});
  return interaction.editReply({embeds:[embed],allowedMentions:{parse:[]}});
