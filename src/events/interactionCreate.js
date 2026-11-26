@@ -1,3 +1,4 @@
+import {handleCustomSetup} from '../services/farm/customSetup.js';
 import { handleAltReview } from '../services/farm/altReview.js';
 import {handleTrainerLauncher} from '../services/farm/trainerLauncher.js';
 import {readRecords} from '../services/farm/records.js';
@@ -63,6 +64,7 @@ export default {
         InteractionHelper.patchInteractionResponses(interaction);
         ResponseCoordinator.attach(interaction);
 
+        if (interaction.customId?.startsWith('customfarm:')) return await handleCustomSetup(interaction,client);
         if (interaction.customId?.startsWith('alt_review:')) return await handleAltReview(interaction,client);
         if (interaction.customId?.startsWith('trainer_launch:')) return await handleTrainerLauncher(interaction,client);
         if (interaction.isChatInputCommand()) {
