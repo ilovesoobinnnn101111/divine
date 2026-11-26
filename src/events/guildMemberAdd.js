@@ -6,7 +6,7 @@ import { formatWelcomeMessage } from '../utils/welcome.js';
 import { logEvent, EVENT_TYPES } from '../services/loggingService.js';
 import { getServerCounters, updateCounter } from '../services/serverstatsService.js';
 import { setBirthday as dbSetBirthday } from '../utils/database.js';
-import { appendRecord } from '../services/farm/records.js';
+import { appendRecord, readRecords } from '../services/farm/records.js';
 import { logger } from '../utils/logger.js';
 
 export default {
@@ -232,6 +232,10 @@ async function screenJoin(member) {
     if(!member.user.avatar){score+=10;reasons.push('Default profile picture');}
     if(joins.length>=5){score+=25;reasons.push('At least 5 joins within 60 seconds');}
     if(score<30)return;
+    if(member.client.db?.isAvailable?.()){
+        const exemptions=await readRecords(member.client,member.guild.id,'altWhitelist').catch(error=>{logger.warn('Whitelist lookup failed:',error);return [];});
+        if(exemptions.some(r=>r.memberId===member.id))return;
+    }
     const level=score>=60?'High':'Moderate';
     const arrow='<:x_whitearrow:1575129831988002968>', sparkle='<a:001_sparkles:1575070315724279918>', cat='<:qw_pwhitekat:1575470985405010022>';
     const channel=await member.guild.channels.fetch('1571956074008027137').catch(()=>null);
