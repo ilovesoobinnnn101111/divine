@@ -5,11 +5,11 @@ const ids = name => (process.env[name] || '').split(',').map(x => x.trim()).filt
 export const sessions = new Map();
 export const authorized = member => ['HOST_MANAGER_ROLE_ID','HOST_TRAINER_ROLE_ID','WATCHER_ROLE_ID','OWNER_ROLE_ID'].some(k => memberHasFarmRole(member, ids(k)));
 export function panel(state) {
-  const embed = new EmbedBuilder().setColor(0x9B59B6).setTitle('🎓 Watcher Trial Evaluation')
-    .setDescription(`**Trial Host:** <@${state.trialHostId}>\n**Farm Type:** ${state.farmType}\n**Rules Said:** ${state.rulesSaid ? 'Yes' : 'No'}\n**Disconnect:** ${state.dcOccurred ? 'Yes' : 'No'}\n**Griefing/Trolling:** ${state.griefTroll ? 'Yes' : 'No'}\n\nSet the farm type and checklist below. Use **Open Form & Submit** when the checklist is ready. Your existing \`/watcher-report\` command also remains available.`)
+  const embed = new EmbedBuilder().setColor(0xFFFFFF).setTitle('<a:001_sparkles:1575070315724279918> Watcher Trial Evaluation')
+    .setDescription(`<:gs_white_butterfly:1573946745577279608> **Trial Host:** <@${state.trialHostId}>\n<:x_whitearrow:1575129831988002968> **Farm Type:** ${state.farmType}\n<:x_whitearrow:1575129831988002968> **Rules Said:** ${state.rulesSaid ? 'Yes' : 'No'}\n<:x_whitearrow:1575129831988002968> **Disconnect:** ${state.dcOccurred ? 'Yes' : 'No'}\n<:x_whitearrow:1575129831988002968> **Griefing/Trolling:** ${state.griefTroll ? 'Yes' : 'No'}\n\nSet the farm type and checklist below. Use **Open Form & Submit** when the checklist is ready. Your existing \`/watcher-report\` command also remains available.`)
     .setImage(state.screenshotUrl).setTimestamp();
   const select = new StringSelectMenuBuilder().setCustomId(`watcher_panel_type:${state.userId}`).setPlaceholder('Choose farm type')
-    .addOptions(['Hybrid','2-2-2','336','KO Farm'].map(value => ({ label: value, value, default: state.farmType === value })));
+    .addOptions(['Hybrid','222'].map(value => ({ label: value, value, default: state.farmType === value })));
   const buttons = new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId(`watcher_panel_rules:${state.userId}`).setLabel(`Rules Said: ${state.rulesSaid ? 'Yes' : 'No'}`).setStyle(state.rulesSaid ? ButtonStyle.Success : ButtonStyle.Secondary),
     new ButtonBuilder().setCustomId(`watcher_panel_dc:${state.userId}`).setLabel(`DC: ${state.dcOccurred ? 'Yes' : 'No'}`).setStyle(state.dcOccurred ? ButtonStyle.Danger : ButtonStyle.Secondary),
