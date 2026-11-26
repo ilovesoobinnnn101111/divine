@@ -1,3 +1,4 @@
+import {heroStats} from './heroStats.js';
 import {heroRoster,resolveHero} from './heroRoster.js';
 import {ActionRowBuilder,ButtonBuilder,ButtonStyle,ChannelSelectMenuBuilder,ChannelType,StringSelectMenuBuilder,ModalBuilder,TextInputBuilder,TextInputStyle,MessageFlags,EmbedBuilder} from 'discord.js';
 import {farmConfig,memberHasFarmRole} from './config.js';
@@ -14,7 +15,7 @@ const roles=['Vanguard','Duelist','Strategist'];
 const weights={Vanguard:[1,0,3],Duelist:[3,0,1],Strategist:[1,3,0]};
 const clean=x=>String(x||'').replace(/[@`]/g,'').slice(0,60);
 function panels(s){
- const count=s.slots.filter(Boolean).length, totals=[0,1].map(t=>s.slots.slice(t*6,t*6+6).reduce((a,p)=>a.map((v,j)=>v+(weights[p?.role]?.[j]||0)),[0,0,0]));
+ const count=s.slots.filter(Boolean).length, totals=[0,1].map(t=>s.slots.slice(t*6,t*6+6).reduce((a,p)=>a.map((v,j)=>v+(p?.scores?.[j]??weights[p?.role]?.[j]??0)),[0,0,0]));
  const balance=['Damage','Healing','Blocking'].map((x,j)=>x+': '+totals[0][j]+' / '+totals[1][j]).join('\n');
  const e=title=>new EmbedBuilder().setColor(0xFFFFFF).setTitle(title);
  return [{embeds:[e('<a:001_sparkles:1575070315724279918> DIVINE — CUSTOM FARM').setDescription('<:gs_white_butterfly:1573946745577279608> **Host:** <@'+s.owner+'>\nCo-host: '+(s.cohost?'<@'+s.cohost+'>':'None')+'\n<:x_whitearrow:1575129831988002968> **Voice:** <#'+s.vc+'>\nType: '+s.type+'\n<:awhitestar:1573946665520337017> **Players:** '+count+'/12\nReserved slots: '+s.priority+'/3\n\n**Estimated role balance (not game statistics)**\n'+balance)],components:[row(button(prefix(s,'join'),'Join Farm'),button(prefix(s,'leave'),'Leave'),button(prefix(s,'priority'),'Priority Slots'),button(prefix(s,'close'),'Close'))]},...[0,1].map(t=>({embeds:[e('<:gs_white_butterfly:1573946745577279608> TEAM '+(t+1)+' — '+s.slots.slice(t*6,t*6+6).filter(Boolean).length+'/6').setDescription(s.slots.slice(t*6,t*6+6).map((p,j)=>'<:x_whitearrow:1575129831988002968> **'+(j+1)+'.** '+(p?'<@'+p.user+'> · '+clean(p.ign)+' · '+clean(p.role)+' · '+clean(p.hero):'<:1CL_checkwhite:1575465471015260190> Available')).join('\n'))],components:[row(new StringSelectMenuBuilder().setCustomId(prefix(s,'slot')).setPlaceholder('Edit team slot').addOptions(Array.from({length:6},(_,j)=>({label:'Slot '+(j+1),value:String(t*6+j)}))))]}))];
@@ -62,6 +63,6 @@ export async function handleCustomSetup(i,c){
  }else if(a==='leave'){s.slots=s.slots.map(p=>p?.user===i.user.id?null:p);}
  else if(a==='prioritysave'){const x=i.fields.getTextInputValue('count');if(!/^[0-3]$/.test(x))return privateReply(i,'Choose 0 to 3.');s.priority=Number(x);}
  else if(a==='close'){s.closed=true;}else return privateReply(i,'Invalid action.');
- await i.deferReply({flags:MessageFlags.Ephemeral});await c.db.set(k,s);await refresh(i,s);return i.editReply(s.closed?'Farm closed.':'Farm updated.');
+ await i.deferReply({flags:MessageFlags.Ephemeral});if(['pickjoin','joinsave','edit'].includes(a)){await Promise.all(s.slots.filter(p=>p&&!p.scores).map(async p=>{const result=await heroStats(p.role,p.hero);p.scores=result.scores;p.scoreSource=result.source;}));}await c.db.set(k,s);await refresh(i,s);return i.editReply(s.closed?'Farm closed.':'Farm updated.');
  });
 }
