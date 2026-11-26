@@ -41,8 +41,13 @@ export async function handleTrainerLauncher(i,client){
  if(i.isModalSubmit()){
  if(!s||s.expires<Date.now()||i.customId.split(':')[2]!==s.token)return i.reply({content:'Evaluation expired. Start again.',flags:MessageFlags.Ephemeral});
  if(s.preview||s.submitting)return i.reply({content:'A preview is already active.',flags:MessageFlags.Ephemeral});
- const type=s.type,host=s.host,minutes=Number(i.fields.getTextInputValue('minutes')),notes=i.fields.getTextInputValue('notes').trim(),checks=[s.rules,s.dc,s.grief];
- if(!['222','Hybrid'].includes(type)||!/^\d{17,20}$/.test(host)||!Number.isInteger(minutes)||minutes<1||minutes>240||notes.length<10||notes.length>850||checks.length!==3||checks.some(x=>!['yes','no'].includes(x)))return i.reply({content:'Invalid evaluation. Enter 1–240 minutes and 10–850 characters of notes.',flags:MessageFlags.Ephemeral});
+ const type=s.type,host=s.host,minutes=Number(i.fields.getTextInputValue('minutes').trim().replace(/\s*(minutes?|mins?)$/i,'')),notes=i.fields.getTextInputValue('notes').trim(),checks=[s.rules,s.dc,s.grief];
+ const invalid=msg=>i.reply({content:msg,flags:MessageFlags.Ephemeral});
+ if(!['222','Hybrid'].includes(type))return invalid('Select a valid farm type.');
+ if(!host||!/^\d{17,20}$/.test(host))return invalid('Select a trial host.');
+ if(!Number.isInteger(minutes)||minutes<1||minutes>240)return invalid('Training duration must be a whole number from 1 to 240, for example 30.');
+ if(!notes||notes.length>850)return invalid('Enter evaluation notes (1–850 characters).');
+ if(checks.some(x=>!['yes','no'].includes(x)))return invalid('Answer all three verification questions.');
  const target=await i.guild.members.fetch(host).catch(()=>null),proof=i.fields.getUploadedFiles('proof')?.first();
  if(!target||!proof)return i.reply({content:'Trial host or screenshot missing.',flags:MessageFlags.Ephemeral});
  const fullNotes='Rules explained: '+checks[0]+' | Disconnect: '+checks[1]+' | Griefing/Trolling: '+checks[2]+'\n'+notes;
