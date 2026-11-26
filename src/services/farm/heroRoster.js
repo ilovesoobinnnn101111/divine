@@ -1,2 +1,66 @@
-export const heroRoster={Vanguard:['Bruce Banner','Captain America','Doctor Strange','Emma Frost','Groot','Hulk','Magneto','Peni Parker','The Thing','Thor','Venom'],Duelist:['Black Panther','Black Widow','Hawkeye','Hela','Human Torch','Iron Fist','Iron Man','Magik','Mister Fantastic','Moon Knight','Namor','Psylocke','Scarlet Witch','Spider-Man','Squirrel Girl','Star-Lord','Storm','The Punisher','Winter Soldier','Wolverine'],Strategist:['Adam Warlock','Cloak & Dagger','Invisible Woman','Jeff the Land Shark','Loki','Luna Snow','Mantis','Rocket Raccoon']};
-export function resolveHero(role,name){return heroRoster[role]?.find(h=>h.toLowerCase()===name.trim().toLowerCase())||null;}
+export const heroRoster={
+  "Vanguard": [
+    "Angela",
+    "Captain America",
+    "Deadpool",
+    "Devil Dinosaur",
+    "Doctor Strange",
+    "Emma Frost",
+    "Groot",
+    "Hulk",
+    "Magneto",
+    "Peni Parker",
+    "Rogue",
+    "The Hood",
+    "The Thing",
+    "Thor",
+    "Venom"
+  ],
+  "Duelist": [
+    "Black Cat",
+    "Black Panther",
+    "Black Widow",
+    "Blade",
+    "Cyclops",
+    "Daredevil",
+    "Deadpool",
+    "Elsa Bloodstone",
+    "Gorr the God Butcher",
+    "Hawkeye",
+    "Hela",
+    "Human Torch",
+    "Iron Fist",
+    "Iron Man",
+    "Magik",
+    "Mister Fantastic",
+    "Moon Knight",
+    "Namor",
+    "Phoenix",
+    "Psylocke",
+    "Scarlet Witch",
+    "Spider-Man",
+    "Squirrel Girl",
+    "Star-Lord",
+    "Storm",
+    "The Punisher",
+    "Winter Soldier",
+    "Wolverine"
+  ],
+  "Strategist": [
+    "Adam Warlock",
+    "Cloak & Dagger",
+    "Deadpool",
+    "Gambit",
+    "Invisible Woman",
+    "Jeff the Land Shark",
+    "Jubilee",
+    "Loki",
+    "Luna Snow",
+    "Mantis",
+    "Nightcrawler",
+    "Rocket Raccoon",
+    "Ultron",
+    "White Fox"
+  ]
+};
+export function resolveHero(role,name){const normalized=name.trim().toLowerCase();return heroRoster[role]?.find(h=>h.toLowerCase()===(normalized==='bruce banner'?'hulk':normalized))||null;}
