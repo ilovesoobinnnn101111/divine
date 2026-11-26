@@ -1,3 +1,4 @@
+import {heroRoster,resolveHero} from './heroRoster.js';
 import {ActionRowBuilder,ButtonBuilder,ButtonStyle,ChannelSelectMenuBuilder,ChannelType,StringSelectMenuBuilder,ModalBuilder,TextInputBuilder,TextInputStyle,MessageFlags,EmbedBuilder} from 'discord.js';
 import {farmConfig,memberHasFarmRole} from './config.js';
 import {withRecordLock} from './records.js';
@@ -43,8 +44,9 @@ export async function handleCustomSetup(i,c){
  if(a==='slot'){const j=Number(i.values[0]),p=s.slots[j];if(!staff&&p?.user!==i.user.id)return privateReply(i,'You may edit only your own slot.');if(!p)return privateReply(i,'Use Join Farm to fill an empty slot.');return i.showModal(modal(s,'edit:'+j,'Edit hero and IGN',[['ign','In-game name',40],['role','Vanguard / Duelist / Strategist',20],['hero','Hero name',40]]));}
  if(a==='joinsave'||a==='edit'){
  const ign=i.fields.getTextInputValue('ign').trim(),hero=i.fields.getTextInputValue('hero').trim(),role=roles.find(r=>r.toLowerCase()===i.fields.getTextInputValue('role').trim().toLowerCase());if(!role||!ign||!hero)return privateReply(i,'Provide a valid role, hero and IGN.');
+ const canonical=resolveHero(role,hero);if(!canonical)return privateReply(i,'Hero not in the baseline '+role+' catalog. Available: '+heroRoster[role].join(', ')+'.');
  let j=Number(n);if(a==='joinsave'){if(s.slots.some(p=>p?.user===i.user.id)||(!staff&&s.slots.filter(p=>!p).length<=s.priority))return privateReply(i,'Already joined or remaining slots reserved.');j=s.slots.findIndex(p=>!p);if(j<0)return privateReply(i,'Farm full.');}else if(!s.slots[j]||(!staff&&s.slots[j].user!==i.user.id))return privateReply(i,'Slot unavailable.');
- s.slots[j]={user:a==='joinsave'?i.user.id:s.slots[j].user,ign,role,hero};
+ s.slots[j]={user:a==='joinsave'?i.user.id:s.slots[j].user,ign,role,hero:canonical};
  }else if(a==='leave'){s.slots=s.slots.map(p=>p?.user===i.user.id?null:p);}
  else if(a==='prioritysave'){const x=i.fields.getTextInputValue('count');if(!/^[0-3]$/.test(x))return privateReply(i,'Choose 0 to 3.');s.priority=Number(x);}
  else if(a==='close'){s.closed=true;}else return privateReply(i,'Invalid action.');
