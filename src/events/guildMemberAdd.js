@@ -1,3 +1,4 @@
+import { altReviewRow } from '../services/farm/altReview.js';
 import { Events, EmbedBuilder, PermissionFlagsBits } from 'discord.js';
 import { getColor, botConfig } from '../config/bot.js';
 import { getGuildConfig } from '../services/config/guildConfig.js';
@@ -249,6 +250,6 @@ async function screenJoin(member) {
       {name:arrow+' Screening Score',value:level+' — '+score+' points',inline:true},
       {name:cat+' Indicators',value:reasons.map(r=>arrow+' '+r).join('\n')}
     ).setFooter({text:'Indicators only • Not proof of alternate account ownership'}).setTimestamp(now);
-    const message=await channel.send({embeds:[embed],allowedMentions:{parse:[]}});
+    const message=await channel.send({embeds:[embed],components:[altReviewRow()],allowedMentions:{parse:[]}});
     await appendRecord(member.client,member.guild.id,'altScreeningLogs',{memberId:member.id,timestamp:now,score,level,reasons,messageId:message.id});
 }
