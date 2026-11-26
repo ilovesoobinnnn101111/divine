@@ -44,7 +44,7 @@ export async function handleCustomSetup(i,c){
  if(s.messages.length!==3)return privateReply(i,'Setup is incomplete.');
  if(a==='rolepick'){
  const role=i.values[0];if(!roles.includes(role))return privateReply(i,'Invalid role.');
- return i.update({content:'Choose your hero.',components:[row(new StringSelectMenuBuilder().setCustomId(prefix(s,'heropick:'+role)).setPlaceholder('Select hero').addOptions(heroRoster[role].slice(0,25).map(h=>({label:h,value:h})) ))]});
+ return i.update({content:'Choose your hero.',components:Array.from({length:Math.ceil(heroRoster[role].length/25)},(_,page)=>row(new StringSelectMenuBuilder().setCustomId(prefix(s,'heropick:'+role+':'+page)).setPlaceholder('Select hero'+(heroRoster[role].length>25?' — list '+(page+1):'')).addOptions(heroRoster[role].slice(page*25,page*25+25).map(h=>({label:h,value:h})))))});
  }
  if(a==='heropick'){
  const role=n,hero=resolveHero(role,i.values[0]);if(!hero)return privateReply(i,'Invalid hero.');
