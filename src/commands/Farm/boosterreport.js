@@ -1,3 +1,5 @@
+import weekly from './boosterweekly.js';
+import monthly from './boostermonthly.js';
 import { SlashCommandBuilder, EmbedBuilder, MessageFlags } from 'discord.js';
 import { readRecords } from '../../services/farm/records.js';
 import { memberHasFarmRole } from '../../services/farm/config.js';
@@ -8,8 +10,14 @@ const formatBreakdown = (entries, limit = 10) => entries.slice(0, limit).map(([n
 
 export default {
   data: new SlashCommandBuilder().setName('boosterreport')
-    .setDescription('View the overall Booster System report (Booster Manager only)'),
+    .setDescription('Booster team reports (Booster Manager only)')
+    .addSubcommand(s=>s.setName('overall').setDescription('Overall booster report'))
+    .addSubcommand(s=>s.setName('weekly').setDescription('Weekly booster report'))
+    .addSubcommand(s=>s.setName('monthly').setDescription('Monthly booster report')),
   async execute(interaction, guildConfig, client) {
+    const period=interaction.options.getSubcommand(false);
+    if(period==='weekly')return weekly.execute(interaction,guildConfig,client);
+    if(period==='monthly')return monthly.execute(interaction,guildConfig,client);
     if (!interaction.inGuild() || (process.env.TEST_GUILD_ID && interaction.guildId !== process.env.TEST_GUILD_ID))
       return interaction.reply({ content: 'This command is only available in the test server.', flags: MessageFlags.Ephemeral });
     if (!memberHasFarmRole(interaction.member, managerRoles()))
