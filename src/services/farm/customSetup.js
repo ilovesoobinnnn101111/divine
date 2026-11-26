@@ -39,10 +39,22 @@ export async function handleCustomSetup(i,c){
  if(a==='vc'&&!s.messages.length){s.vc=i.values[0];const vc=await i.guild.channels.fetch(s.vc).catch(()=>null);if(vc?.type!==ChannelType.GuildVoice)return privateReply(i,'Choose a voice channel.');await c.db.set(k,s);return i.update({content:'Choose farm type.',components:[row(new StringSelectMenuBuilder().setCustomId(prefix(s,'type')).addOptions([{label:'222 (30 min)',value:'222'},{label:'Hybrid (60 min)',value:'Hybrid'},{label:'336 Arcade (60 min)',value:'336 Arcade'}]))]});}
  if(a==='type'&&!s.messages.length&&s.vc){await i.deferUpdate();s.type=i.values[0];const ch=await i.guild.channels.fetch(s.channel);for(const p of panels(s)){const m=await ch.send({...p,allowedMentions:{parse:[]}});s.messages.push(m.id);await c.db.set(k,s);}return i.editReply({content:'Custom farm panels posted.',components:[]});}
  if(s.messages.length!==3)return privateReply(i,'Setup is incomplete.');
- if(a==='join'){if(s.slots.some(p=>p?.user===i.user.id))return privateReply(i,'Already joined. Edit your team slot.');if(s.slots.filter(p=>!p).length<=s.priority&&!staff)return privateReply(i,'Remaining slots are reserved.');return i.showModal(modal(s,'joinsave','Join custom farm',[['ign','In-game name',40],['role','Vanguard / Duelist / Strategist',20],['hero','Hero name',40]]));}
+ if(a==='rolepick'){
+ const role=i.values[0];if(!roles.includes(role))return privateReply(i,'Invalid role.');
+ return i.update({content:'Choose your hero.',components:[row(new StringSelectMenuBuilder().setCustomId(prefix(s,'heropick:'+role)).setPlaceholder('Select hero').addOptions(heroRoster[role].slice(0,25).map(h=>({label:h,value:h})) ))]});
+ }
+ if(a==='heropick'){
+ const role=n,hero=resolveHero(role,i.values[0]);if(!hero)return privateReply(i,'Invalid hero.');
+ return i.showModal(modal(s,'pickjoin:'+roles.indexOf(role)+':'+heroRoster[role].indexOf(hero),'Enter your IGN',[['ign','In-game name',40]]));
+ }
+ if(a==='join'){if(s.slots.some(p=>p?.user===i.user.id))return privateReply(i,'Already joined. Edit your team slot.');if(s.slots.filter(p=>!p).length<=s.priority&&!staff)return privateReply(i,'Remaining slots are reserved.');return i.reply({flags:MessageFlags.Ephemeral,content:'Choose your role.',components:[row(new StringSelectMenuBuilder().setCustomId(prefix(s,'rolepick')).setPlaceholder('Select role').addOptions(roles.map(r=>({label:r,value:r}))))]});}
  if(a==='priority')return i.showModal(modal(s,'prioritysave','Reserve slots',[['count','Reserved slots (0-3)',1]]));
  if(a==='slot'){const j=Number(i.values[0]),p=s.slots[j];if(!staff&&p?.user!==i.user.id)return privateReply(i,'You may edit only your own slot.');if(!p)return privateReply(i,'Use Join Farm to fill an empty slot.');return i.showModal(modal(s,'edit:'+j,'Edit hero and IGN',[['ign','In-game name',40],['role','Vanguard / Duelist / Strategist',20],['hero','Hero name',40]]));}
- if(a==='joinsave'||a==='edit'){
+ if(a==='pickjoin'){
+ const role=roles[Number(n)],hero=heroRoster[role]?.[Number(i.customId.split(':')[4])],ign=i.fields.getTextInputValue('ign').trim();
+ if(!hero||!ign||s.slots.some(p=>p?.user===i.user.id)||(!staff&&s.slots.filter(p=>!p).length<=s.priority))return privateReply(i,'Invalid selection, already joined, or slots reserved.');
+ const j=s.slots.findIndex(p=>!p);if(j<0)return privateReply(i,'Farm full.');s.slots[j]={user:i.user.id,ign,role,hero};
+ }else if(a==='joinsave'||a==='edit'){
  const ign=i.fields.getTextInputValue('ign').trim(),hero=i.fields.getTextInputValue('hero').trim(),role=roles.find(r=>r.toLowerCase()===i.fields.getTextInputValue('role').trim().toLowerCase());if(!role||!ign||!hero)return privateReply(i,'Provide a valid role, hero and IGN.');
  const canonical=resolveHero(role,hero);if(!canonical)return privateReply(i,'Hero not in the baseline '+role+' catalog. Available: '+heroRoster[role].join(', ')+'.');
  let j=Number(n);if(a==='joinsave'){if(s.slots.some(p=>p?.user===i.user.id)||(!staff&&s.slots.filter(p=>!p).length<=s.priority))return privateReply(i,'Already joined or remaining slots reserved.');j=s.slots.findIndex(p=>!p);if(j<0)return privateReply(i,'Farm full.');}else if(!s.slots[j]||(!staff&&s.slots[j].user!==i.user.id))return privateReply(i,'Slot unavailable.');
