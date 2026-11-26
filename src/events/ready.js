@@ -1,3 +1,4 @@
+import { startFarmMonitor } from '../services/farm/farmMonitor.js';
 import { startTimezoneUpdates } from '../services/farm/timezones.js';
 import { Events } from "discord.js";
 import { logger, startupLog } from "../utils/logger.js";
@@ -17,6 +18,7 @@ export default {
       client.user.setPresence(config.bot.presence);
       startBoosterOrderAlertMonitor(client);
       startTimezoneUpdates(client);
+      startFarmMonitor(client);
 
       startupLog(`Ready! Logged in as ${client.user.tag}`);
       startupLog(`Serving ${client.guilds.cache.size} guild(s)`);

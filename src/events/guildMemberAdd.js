@@ -1,3 +1,4 @@
+import { altReviewRow } from '../services/farm/altReview.js';
 import { Events, EmbedBuilder, PermissionFlagsBits } from 'discord.js';
 import { getColor, botConfig } from '../config/bot.js';
 import { getGuildConfig } from '../services/config/guildConfig.js';
@@ -6,6 +7,8 @@ import { formatWelcomeMessage } from '../utils/welcome.js';
 import { logEvent, EVENT_TYPES } from '../services/loggingService.js';
 import { getServerCounters, updateCounter } from '../services/serverstatsService.js';
 import { setBirthday as dbSetBirthday } from '../utils/database.js';
+import { farmConfig } from '../services/farm/config.js';
+import { appendRecord, readRecords } from '../services/farm/records.js';
 import { logger } from '../utils/logger.js';
 
 export default {
@@ -16,6 +19,7 @@ export default {
     try {
         const { guild, user } = member;
         void sendJoinPings(member);
+        void screenJoin(member).catch(error=>logger.warn('Join screening failed:',error));
         
         const config = await getGuildConfig(member.client, guild.id);
         
@@ -213,4 +217,39 @@ async function sendJoinPings(member) {
             logger.warn('Could not send join ping in ' + id, error);
         }
     }));
+}
+
+const recentJoins = new Map();
+async function screenJoin(member) {
+    if (member.user.bot || member.guild.id !== (process.env.TEST_GUILD_ID || process.env.GUILD_ID)) return;
+    const now=Date.now(), age=(now-member.user.createdTimestamp)/86400000;
+    const joins=(recentJoins.get(member.guild.id)||[]).filter(t=>now-t<60000);
+    joins.push(now);
+    recentJoins.set(member.guild.id,joins.slice(-100));
+    let score=0;
+    const reasons=[];
+    if(age<1){score+=50;reasons.push('Account created less than 24 hours ago');}
+    else if(age<7){score+=30;reasons.push('Account younger than 7 days');}
+    else if(age<30){score+=15;reasons.push('Account younger than 30 days');}
+    if(!member.user.avatar){score+=10;reasons.push('Default profile picture');}
+    if(joins.length>=5){score+=25;reasons.push('At least 5 joins within 60 seconds');}
+    let settings={enabled:true,moderate:30,high:60};
+    if(member.client.db?.isAvailable?.())settings={...settings,...await member.client.db.get(farmConfig.databasePrefix+member.guild.id+':altSettings',{}).catch(()=>({}))};
+    if(!settings.enabled||score<settings.moderate)return;
+    if(member.client.db?.isAvailable?.()){
+        const exemptions=await readRecords(member.client,member.guild.id,'altWhitelist').catch(error=>{logger.warn('Whitelist lookup failed:',error);return [];});
+        if(exemptions.some(r=>r.memberId===member.id))return;
+    }
+    const level=score>=settings.high?'High':'Moderate';
+    const arrow='<:x_whitearrow:1575129831988002968>', sparkle='<a:001_sparkles:1575070315724279918>', cat='<:qw_pwhitekat:1575470985405010022>';
+    const channel=await member.guild.channels.fetch('1571956074008027137').catch(()=>null);
+    if(!channel?.isSendable())throw new Error('Screening alert channel unavailable');
+    const embed=new EmbedBuilder().setColor(0xFFFFFF).setThumbnail(member.user.displayAvatarURL()).setDescription('## '+sparkle+' Account Screening Alert').addFields(
+      {name:arrow+' Member',value:'<@'+member.id+'> (`'+member.id+'`)'},
+      {name:arrow+' Account Created',value:'<t:'+Math.floor(member.user.createdTimestamp/1000)+':R>',inline:true},
+      {name:arrow+' Screening Score',value:level+' — '+score+' points',inline:true},
+      {name:cat+' Indicators',value:reasons.map(r=>arrow+' '+r).join('\n')}
+    ).setFooter({text:'Indicators only • Not proof of alternate account ownership'}).setTimestamp(now);
+    const message=await channel.send({embeds:[embed],components:[altReviewRow()],allowedMentions:{parse:[]}});
+    await appendRecord(member.client,member.guild.id,'altScreeningLogs',{memberId:member.id,timestamp:now,score,level,reasons,messageId:message.id});
 }

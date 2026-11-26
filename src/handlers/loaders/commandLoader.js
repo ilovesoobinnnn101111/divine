@@ -281,7 +281,7 @@ async function registerGlobalCommands(client, clientId, commands, totalSubcomman
   command.name === 'orderstatus' ||
   command.name === 'orderupdate' ||
   command.name === 'orderassignment' ||
-  command.name === 'watcher-panel' ||
+  command.name === 'altsettings' || command.name === 'altstats' || command.name === 'altwhitelist' || command.name === 'altlogs' || command.name === 'altcheck' || command.name === 'watcher-setup' || command.name === 'watcher-panel' ||
   command.name === 'watcher-report' ||
   command.name === 'trainerhours' ||
   command.name === 'trainerratings' ||
@@ -303,7 +303,7 @@ async function registerGlobalCommands(client, clientId, commands, totalSubcomman
   command.name === 'quotastatus' ||
   command.name === 'renewfarm' ||
   command.name === 'activefarms' ||
-  command.name === 'startfarm' || command.name === 'farmhelp' || command.name === 'cancelfarm' || command.name === 'endfarmearly' || command.name === 'hostcheck' || command.name === 'hostleaderboard' || command.name === 'hostlog' || command.name === 'mylogs' || command.name === 'reportplayer' || command.name === 'resetlogs' || command.name === 'searchlogs' || command.name === 'vouchhost' || command.name === 'vouchstats');
+  command.name === 'startfarm' || command.name === 'farmhelp' || command.name === 'cancelfarm' || command.name === 'endfarmearly' || command.name === 'hostcheck' || command.name === 'hostleaderboard' || command.name === 'hostlog' || command.name === 'mylogs' || command.name === 'reportplayer' || command.name === 'resetlogs' || command.name === 'searchlogs' || command.name === 'vouchhost' || command.name === 'hostvouchs' || command.name === 'boostvouchs' || command.name === 'vouchstats');
     if (testGuildId) {
         if (!/^\d{17,20}$/.test(testGuildId)) throw new Error('TEST_GUILD_ID must be a valid Discord server ID');
         if (!clientId) throw new Error('CLIENT_ID is required for slash command registration');
@@ -311,7 +311,8 @@ async function registerGlobalCommands(client, clientId, commands, totalSubcomman
         if (!farmCommands.some(command => command.name === 'startfarm')) throw new Error('Farm command startfarm was not loaded');
         validateCommands(farmCommands);
         logger.info(`Registering ${farmCommands.length} farm commands in test guild ${testGuildId}`);
-        await client.rest.put(`/applications/${clientId}/guilds/${testGuildId}/commands`, { body: farmCommands });
+        const registered = await client.rest.put(`/applications/${clientId}/guilds/${testGuildId}/commands`, { body: farmCommands });
+        for(const name of ['altcheck','altlogs','altwhitelist','altstats','altsettings']) console.log('[command registration] guild='+testGuildId+' application='+clientId+' '+name+' loaded='+client.commands.has(name)+' requested='+farmCommands.some(c=>c.name===name)+' registered='+registered.some(c=>c.name===name));
         logger.info(`Successfully registered ${farmCommands.length} farm test guild commands`);
         return;
     }

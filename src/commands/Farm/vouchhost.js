@@ -11,7 +11,7 @@ export default {
   const host=interaction.options.getUser('host');
   if(host.bot||host.id===interaction.user.id) return interaction.reply({content:'You cannot vouch for yourself or a bot.',flags:MessageFlags.Ephemeral});
   const sessions=(await readRecords(client,interaction.guildId,'completedSessions'))
-    .filter(x=>x.hostId===host.id && x.playerIds?.includes(interaction.user.id) && x.reason!=='CANCELLED')
+    .filter(x=>x.hostId===host.id && x.playerIds?.includes(interaction.user.id) && x.reason!=='CANCELLED' && Date.now()<x.endedAt+21600000)
     .sort((a,b)=>b.endedAt-a.endedAt);
   if(!sessions.length) return interaction.reply({content:'You can only vouch for a host after participating in one of their completed farms.',flags:MessageFlags.Ephemeral});
   const result=await withRecordLock(client,interaction.guildId,'vouches',async()=>{
@@ -25,7 +25,7 @@ export default {
   });
   if(!result) return interaction.reply({content:'You have already vouched for every eligible farm session with this host.',flags:MessageFlags.Ephemeral});
   const record=result;
-  const channel=farmConfig.channels.hostVouch?await client.channels.fetch(farmConfig.channels.hostVouch).catch(()=>null):null;
+  const channel=await client.channels.fetch(process.env.FARM_REVIEW_CHANNEL_ID||farmConfig.channels.hostVouch||'1573919674146758686').catch(()=>null);
   if(channel?.send&&channel.guildId===interaction.guildId) await channel.send({content:`⭐ <@${record.voterId}> rated <@${record.hostId}> ${record.rating}/5${record.comment?` — ${record.comment}`:''}`,allowedMentions:{parse:[]}}).catch(()=>{});
   return interaction.reply({content:'Your host vouch has been recorded.',flags:MessageFlags.Ephemeral});
  }
