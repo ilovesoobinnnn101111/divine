@@ -1,6 +1,8 @@
-import { SlashCommandBuilder, MessageFlags, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, MessageFlags, EmbedBuilder, escapeMarkdown } from 'discord.js';
 import { readRecords } from '../../services/farm/records.js';
 
+const check='<:1CL_checkwhite:1575465471015260190>', sparkle='<a:001_sparkles:1575070315724279918>', butterfly='<:gs_white_butterfly:1573946745577279608>', arrow='<:x_whitearrow:1575129831988002968>', cat='<:qw_pwhitekat:1575470985405010022>';
+const format=m=>Math.floor(m/60)+'h '+Math.floor(m%60)+'m';
 const WEEK = 7 * 24 * 60 * 60 * 1000;
 export default {
   data: new SlashCommandBuilder().setName('trainerstats')
@@ -23,20 +25,20 @@ export default {
     const weekly = ratings.filter(r => Number(r.timestamp) > Math.max(Date.now() - WEEK, lastReset));
     const sessions = trainerLogs.filter(r => r?.trainerId === user.id);
     const embed = new EmbedBuilder().setColor(0xFFFFFF)
-      .setTitle(`🎓 Trainer Stats - ${user.username}`)
+      .setDescription('## '+sparkle+' Trainer Stats - '+escapeMarkdown(user.username))
       .setThumbnail(user.displayAvatarURL()).setTimestamp();
     if (!ratings.length && !sessions.length) {
-      embed.setDescription('No ratings or trainer sessions yet.');
-      return interaction.editReply({ embeds: [embed] });
+      embed.addFields({name:arrow+' Activity',value:'No ratings or trainer sessions yet.'});
+      return interaction.editReply({ embeds: [embed], allowedMentions:{parse:[]} });
     }
     if (ratings.length) {
       const avg = ratings.reduce((s,r) => s + Number(r.rating), 0) / ratings.length;
       const weekAvg = weekly.length ? weekly.reduce((s,r) => s + Number(r.rating), 0) / weekly.length : 0;
       const dist = [1,2,3,4,5].map(n => ratings.filter(r => Number(r.rating) === n).length);
-      embed.setDescription(`**All-Time:** ${avg.toFixed(2)}/5.0 ${'⭐'.repeat(Math.round(avg))}${'☆'.repeat(5-Math.round(avg))}\n**Current week:** ${weekly.length} ratings (${weekAvg.toFixed(2)}/5.0)`);
+      embed.addFields({name:sparkle+' Average Rating',value:avg.toFixed(2)+'/5.0',inline:true},{name:butterfly+' Past 7 Days',value:weekly.length+' ratings ('+weekAvg.toFixed(2)+'/5.0)',inline:true});
       embed.addFields(
-        { name: '📊 Total Ratings', value: `${ratings.length} all-time\n${weekly.length} current week`, inline: true },
-        { name: '⭐ Breakdown', value: [5,4,3,2,1].map(n => `${n}⭐: ${dist[n-1]}`).join('\n'), inline: true }
+        { name: sparkle+' Total Ratings', value: `${ratings.length} all-time\n${weekly.length} current week`, inline: true },
+        { name: cat+' Rating Breakdown', value: [5,4,3,2,1].map(n => `${arrow} ${n}/5: ${dist[n-1]}`).join('\n'), inline: true }
       );
     }
     if (ratings.length) {
@@ -46,16 +48,16 @@ export default {
         const review = String(r.comment || 'No review text').replace(/@/g, '@\\u200b').slice(0,150);
         return `**${when}**\n**Rating ID:** \`${String(r.rating_id || 'Unknown').slice(0,80)}\`\n**Review:** ${review}`;
       });
-      embed.addFields({ name: '📝 Recent Rating IDs & Reviews', value: lines.join('\n\n').slice(0,1024), inline: false });
+      embed.addFields({ name: cat+' Recent Rating IDs & Reviews', value: lines.join('\n\n').slice(0,1024), inline: false });
     }
     if (sessions.length) {
       const reports = sessions.filter(r => r.type === 'watcher');
       const trainees = new Set(reports.map(r => r.trialHostId).filter(Boolean));
-      embed.addFields({name:'<:gs_white_butterfly:1573946745577279608> Training Evaluations',value:`Completed reports: ${reports.length}\nUnique trainees: ${trainees.size}\nHybrid: ${reports.filter(r=>r.farmType==='Hybrid').length}\n222: ${reports.filter(r=>['222','2-2-2'].includes(r.farmType)).length}`});
+      embed.addFields({name:cat+' Training Evaluations',value:`${check} **Completed reports:** ${reports.length}\n${butterfly} **Unique trainees:** ${trainees.size}\n${arrow} **Hybrid:** ${reports.filter(r=>r.farmType==='Hybrid').length}\n${arrow} **222:** ${reports.filter(r=>['222','2-2-2'].includes(r.farmType)).length}`});
       const minutes = sessions.reduce((s,r) => s + (Number(r.minutes) || 0), 0);
       const recentMinutes = sessions.filter(r => Number(r.date) > Date.now() - WEEK).reduce((s,r) => s + (Number(r.minutes) || 0), 0);
-      embed.addFields({ name: '⏱️ Trainer Hours', value: `Past 7 days: ${recentMinutes} min (${(recentMinutes/60).toFixed(1)}h)\nAll-time: ${minutes} min (${(minutes/60).toFixed(1)}h)\nSessions: ${sessions.length}` });
+      embed.addFields({ name: sparkle+' Trainer Hours', value: `${arrow} **Past 7 days:** ${format(recentMinutes)}\n${arrow} **All-time:** ${format(minutes)}\n${arrow} **Sessions:** ${sessions.length}` });
     }
-    return interaction.editReply({ embeds: [embed] });
+    return interaction.editReply({ embeds: [embed], allowedMentions:{parse:[]} });
   }
 };
