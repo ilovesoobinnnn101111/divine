@@ -23,7 +23,7 @@ const clean=x=>String(x||'').replace(/[@`]/g,'').slice(0,60);
 function panels(s){
  const count=s.slots.filter(Boolean).length;
  const balance=balanceText(s.slots);
- const timing=s.fullStartedAt?'\n**Ends:** <t:'+Math.floor((s.fullStartedAt+duration(s)*60000)/1000)+':R>':'\n**Waiting for 12 players**';
+ const timing=s.closed?'\n**Farm ended**':s.fullStartedAt?'\n**Ends:** <t:'+Math.floor((s.fullStartedAt+duration(s)*60000)/1000)+':R>':'\n**Waiting for 12 players**';
  const e=title=>new EmbedBuilder().setColor(0xFFFFFF).setTitle(title);
  return [{embeds:[e('<a:001_sparkles:1575070315724279918> DIVINE — CUSTOM FARM').setDescription('<:gs_white_butterfly:1573946745577279608> **Host:** <@'+s.owner+'>\nCo-host: '+(s.cohost?'<@'+s.cohost+'>':'None')+'\n<:x_whitearrow:1575129831988002968> **Voice:** <#'+s.vc+'>\nType: '+s.type+'\n<:awhitestar:1573946665520337017> **Players:** '+count+'/12\nReserved slots: '+(s.reserved?.length||s.priority||0)+'/3\n\n**Farm balance · HP and tier points**\n'+balance+timing)],components:[row(button(prefix(s,'join'),'Join Farm'),button(prefix(s,'leave'),'Leave'),button(prefix(s,'priority'),'Priority Slots'),button(prefix(s,'manage'),'Manage Teams'),button(prefix(s,'close'),'Close'))]},...[0,1].map(t=>({embeds:[e('<:gs_white_butterfly:1573946745577279608> TEAM '+(t+1)+' — '+s.slots.slice(t*6,t*6+6).filter(Boolean).length+'/6').setDescription(s.slots.slice(t*6,t*6+6).map((p,j)=>'<:x_whitearrow:1575129831988002968> **'+(t*6+j+1)+'.** '+(p?'<@'+p.user+'> · '+clean(p.ign)+' · '+clean(p.role)+' · '+heroLabel(p):'<:1CL_checkwhite:1575465471015260190> Available')).join('\n'))],components:[row(new StringSelectMenuBuilder().setCustomId(prefix(s,'slot')).setPlaceholder('Edit team slot').addOptions(Array.from({length:6},(_,j)=>({label:'Slot '+(t*6+j+1),value:String(t*6+j)}))))]}))];
 }
@@ -42,7 +42,7 @@ export async function handleCustomSetup(i,c){
  if(!allowed(i)||!c.db?.isAvailable?.())return privateReply(i,'Custom farm unavailable.');
  const [,id,a,n]=i.customId.split(':');if(!/^\d{17,20}$/.test(id))return privateReply(i,'Invalid setup.');
  return withRecordLock(c,i.guildId,'custom:'+id,async()=>{
- const k=key(i.guildId,id),s=await c.db.get(k,null);if(!s||s.closed||Date.now()-s.created>86400000)return privateReply(i,'Setup closed or expired.');
+ const k=key(i.guildId,id),s=await c.db.get(k,null);if(!s||s.closed||(!s.fullStartedAt&&Date.now()-s.created>86400000))return privateReply(i,'Setup closed or expired.');
  const staff=manager(i,s);
  if(['vc','type','priority','prioritysave','close'].includes(a)&&!staff)return privateReply(i,'Host or co-host only.');
  if(a==='vc'&&!s.messages.length){s.vc=i.values[0];const vc=await i.guild.channels.fetch(s.vc).catch(()=>null);if(vc?.type!==ChannelType.GuildVoice)return privateReply(i,'Choose a voice channel.');await c.db.set(k,s);return i.update({content:'Choose farm type.',components:[row(new StringSelectMenuBuilder().setCustomId(prefix(s,'type')).addOptions([{label:'222 (30 min)',value:'222'},{label:'Hybrid (60 min)',value:'Hybrid'},{label:'336 Arcade (60 min)',value:'336 Arcade'}]))]});}
@@ -93,6 +93,7 @@ export function startCustomFarmMonitor(c){
  const k=key(g,id),s=await c.db.get(k,null);if(!s||s.finished||s.messages.length!==3)return;
  const ch=await guild.channels.fetch(s.channel);if(!ch?.isSendable())return;
  const elapsed=s.fullStartedAt?Date.now()-s.fullStartedAt:0;
+ if(!s.fullStartedAt&&Date.now()-s.created>86400000){s.closed=true;s.endReason='CANCELLED';}
  if(s.closed||(s.fullStartedAt&&elapsed>=duration(s)*60000)){
  s.closed=true;const reason=s.endReason||'COMPLETED';const record={id:s.messages[0],hostId:s.owner,coHostId:s.cohost,playerIds:s.slots.filter(Boolean).map(p=>p.user).filter(id=>id!==s.owner),startedAt:s.created,fullStartedAt:s.fullStartedAt||null,endedAt:Date.now(),durationMs:Math.max(0,elapsed),type:s.type==='Hybrid'?'HYBRID':s.type==='336 Arcade'?'336':s.type,reason};
  await c.db.set(k,s);await refresh({guild},s);
@@ -100,7 +101,14 @@ export function startCustomFarmMonitor(c){
  if(!s.endPosted){await ch.send({embeds:[farmCompletionEmbed(record)],allowedMentions:{parse:[]}});s.endPosted=true;await c.db.set(k,s);}
  if(reason==='EARLY'&&!s.earlyPosted){const log=await guild.channels.fetch(process.env.FARM_END_LOG_CHANNEL_ID||'1573919237347741776').catch(()=>null);if(log?.isSendable())await log.send({embeds:[farmCompletionEmbed(record)],allowedMentions:{parse:[]}});s.earlyPosted=true;await c.db.set(k,s);}
  if(reason!=='CANCELLED'&&!s.reviewPosted){await postReviewPanel(c,g,record,s.channel);s.reviewPosted=true;await c.db.set(k,s);}
+ if(s.listingId){const listing=await guild.channels.fetch(process.env.ACTIVE_FARMS_CHANNEL_ID||'1571956075366711401').catch(()=>null);if(listing?.isSendable())await listing.messages.delete(s.listingId).catch(()=>{});}
  s.finished=true;await c.db.set(k,s);return;
+ }
+ const listing=await guild.channels.fetch(process.env.ACTIVE_FARMS_CHANNEL_ID||'1571956075366711401').catch(()=>null);
+ if(listing?.isSendable()){
+ const payload={embeds:panels(s)[0].embeds,components:[row(new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel('View Farm').setURL('https://discord.com/channels/'+g+'/'+s.channel+'/'+s.messages[0]))],allowedMentions:{parse:[]}};
+ const old=s.listingId?await listing.messages.fetch(s.listingId).catch(()=>null):null;
+ if(old)await old.edit(payload);else{const m=await listing.send(payload);s.listingId=m.id;try{await c.db.set(k,s);}catch(e){await m.delete().catch(()=>{});throw e;}}
  }
  if(!s.fullStartedAt)return;
  const ids=[...new Set([s.owner,...s.slots.filter(Boolean).map(p=>p.user)])];
