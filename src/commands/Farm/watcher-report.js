@@ -19,7 +19,7 @@ export default {
       .some(k => memberHasFarmRole(interaction.member, ids(k)));
     if (!authorized)
       return interaction.reply({ content: 'Host Manager, Host Trainer, Watcher, or Owner role required.', flags: MessageFlags.Ephemeral });
-    const channelId = process.env.WATCHER_REPORT_CHANNEL_ID?.trim();
+    const channelId = process.env.WATCHER_REPORT_CHANNEL_ID?.trim() || '1571956074347630761';
     if (!channelId) return interaction.reply({ content: 'WATCHER_REPORT_CHANNEL_ID is not configured. No report was saved.', flags: MessageFlags.Ephemeral });
     if (!client.db?.isAvailable?.()) return interaction.reply({ content: 'PostgreSQL is unavailable. No report was saved.', flags: MessageFlags.Ephemeral });
     const screenshot = interaction.options.getAttachment('scoreboard', true);
