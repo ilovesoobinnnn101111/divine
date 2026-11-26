@@ -97,6 +97,16 @@ export async function refreshFarmMessage(client, session) {
   if (message) await message.edit({ embeds: [farmEmbed(session)], components: session.completed ? [] : farmButtons(session) });
 }
 
+export function farmCompletionEmbed(r){
+ const check='<:1CL_checkwhite:1575465471015260190>', sparkle='<a:001_sparkles:1575070315724279918>', stars='<a:1z_2whitestar:1575070645174272001>', fly='<:gwhitefly:1573946548956569737>', butterfly='<:gs_white_butterfly:1573946745577279608>', arrow='<:x_whitearrow:1575129831988002968>', cat='<:qw_pwhitekat:1575470985405010022>';
+ const done=r.reason==='COMPLETED', early=r.reason==='EARLY', type=r.type==='222'?'2-2-2 QP':r.type==='336'?'3-3-6':r.type==='HYBRID'?'Hybrid':r.type;
+ const seconds=Math.floor(r.durationMs/1000);
+ const embed=new EmbedBuilder().setColor(done?0xFFFFFF:0xED4245).setDescription('## '+(done?check+' ':'')+sparkle+' '+type+' Farm '+(done?'Completed':early?'Ended Early':'Cancelled'))
+ .addFields({name:butterfly+' Host',value:'<@'+r.hostId+'>',inline:true},{name:cat+' Co-Host',value:r.coHostId?'<@'+r.coHostId+'>':'None',inline:true},{name:stars+' Duration',value:Math.floor(seconds/60)+'m '+seconds%60+'s',inline:true},{name:fly+' Farm Type',value:arrow+' **'+type+'**'},{name:sparkle+' Status',value:arrow+' **'+(done?'COMPLETED':early?'ENDED EARLY':'CANCELLED')+'**'});
+ if(!done)embed.addFields({name:arrow+' Reason',value:earlyReasons[r.earlyReason]||r.reason});
+ return embed.setFooter({text:'Session ended | '+type+' Farm'+(r.reason!=='CANCELLED'?' | Please rate your experience!':'')}).setTimestamp(r.endedAt);
+}
+
 /** Save a completed session before removing the active session. */
 export async function completeFarm(client, guildId, session, reason = 'COMPLETED', earlyReason = null) {
   const removed=await withRecordLock(client,guildId,'activeStorage',async()=>{
@@ -107,6 +117,7 @@ export async function completeFarm(client, guildId, session, reason = 'COMPLETED
   const record={
     id: current.messageId,
     hostId: current.hostId,
+    coHostId: current.coHostId || null,
     playerIds: [...new Set(current.players || [])].filter(id => id !== current.hostId),
     startedAt: current.startedAt,
     fullStartedAt: current.fullStartedAt || null,
@@ -126,11 +137,11 @@ export async function completeFarm(client, guildId, session, reason = 'COMPLETED
   try {
     const channel=await client.channels.fetch(process.env.FARM_END_LOG_CHANNEL_ID || '1573919237347741776');
     if(channel?.guildId===guildId && channel.isSendable()){
-      const r=removed.record, seconds=Math.floor(r.durationMs/1000);
-      const embed=new EmbedBuilder().setColor(reason==='COMPLETED'?0xF5A9D0:0xED4245).setTitle(reason==='COMPLETED'?'Farm completed':reason==='EARLY'?'Farm has ended early':'Farm '+reason.toLowerCase()).addFields({name:'Host',value:'<@'+r.hostId+'>'},{name:'Farm type',value:r.type},{name:'Farming duration',value:Math.floor(seconds/60)+'m '+seconds%60+'s / '+farmDuration(r.type)+'m'},{name:'Ended early',value:reason==='EARLY'||reason==='CANCELLED'?'Yes':'No'},{name:'Reason',value:earlyReasons[earlyReason]||reason}).setTimestamp(r.endedAt);
+      const embed=farmCompletionEmbed(removed.record);
       await channel.send({embeds:[embed],allowedMentions:{parse:[]}});
     } else console.warn('Farm end log channel unavailable in configured guild');
   } catch(error){console.error('Farm end log failed:',error);}
+  try { const origin=await client.channels.fetch(removed.channelId); if(origin?.guildId===guildId&&origin.isSendable())await origin.send({embeds:[farmCompletionEmbed(removed.record)],allowedMentions:{parse:[]}}); } catch(error){console.error('Farm completion embed failed:',error);}
   if(reason!=='CANCELLED')try{await postReviewPanel(client,guildId,removed.record,removed.channelId);}catch(error){console.error('Farm review panel failed:',error);}
   return true;
 }
