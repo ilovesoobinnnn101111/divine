@@ -19,7 +19,7 @@ function embed(kind,r){
  e.setDescription('Live roster • ongoing combat statistics are unavailable.');
  }else if(kind==='proficiency'){
  const heroes=rows(d).flatMap(a=>Object.entries(a.hero_proficiency_infos||{})).sort((a,b)=>(b[1].proficiency_level??0)-(a[1].proficiency_level??0));
- e.setDescription(lines(heroes.map(([id,h])=>'**'+val(h.hero_name??('Hero '+id))+'** • Level '+val(h.proficiency_level)+' • '+val(h.proficiency_point)+' XP')));
+ e.setDescription(lines(heroes.map(([id,h])=>'**'+val(h.hero_name??('Hero '+id))+'** • Level '+val(h.proficiency_level)+' • '+val(h.proficiency_point)+' points')));
  }else if(kind==='matchhistory'){
  e.setDescription(lines(rows(d?.matches).slice(0,10).map(m=>(m.is_win===true?'Win':m.is_win===false?'Loss':'Result unavailable')+' • '+val(m.map??m.map_id)+' • K/D/A '+[m.kills,m.deaths,m.assists].map(val).join('/'))));
  }else{
@@ -34,7 +34,7 @@ export function command(kind){
  if(!i.inGuild())return i.reply({content:'Server only.',flags:MessageFlags.Ephemeral});
  await i.deferReply({flags:MessageFlags.Ephemeral});
  try{
- let player=i.options.getString('player')?.trim();
+ let player=kind==='top500'?'':i.options.getString('player')?.trim();
  if(!player&&kind!=='top500')player=(await getDefaultProfile(client,i.guildId,i.user.id))?.uid;
  if(!player&&kind!=='top500')return i.editReply('Enter a username or UID, or use /defaultprofile first.');
  if(kind==='defaultprofile'){
